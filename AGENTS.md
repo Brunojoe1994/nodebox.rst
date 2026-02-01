@@ -43,6 +43,47 @@ Prereqs: Java JDK and Apache Ant are required; Maven is used for dependency reso
 - Versioning lives in `src/main/resources/version.properties`; update it when preparing a release build.
 - **NEVER modify the Java code** (`src/main/java`). The Java codebase is legacy and read-only; use it only as a reference. All new development happens in the Rust crates under `crates/`.
 
+## Node Definitions and Implementations
+
+Node definitions and their implementations are split across multiple locations:
+
+### Authoritative Node Definitions (Java `.ndbx` files)
+- `libraries/corevector/corevector.ndbx` — XML definitions for core vector nodes (authoritative source)
+- Each `<node>` element specifies:
+  - `function` — the implementation to call (e.g., `corevector/grid`)
+  - `outputType` — the data type produced (e.g., `point`, `geometry`)
+  - `outputRange` — whether output is `value` (single) or `list` (multiple)
+  - `<port>` elements — input parameters with types, defaults, and widgets
+
+### Java Function Implementations (reference only)
+- **Java** (`corevector/*`): `src/main/java/nodebox/function/CoreVectorFunctions.java`
+- **Python** (`pyvector/*`): `src/main/python/` modules
+
+### Rust Implementations
+- **Node operations**: `crates/nodebox-ops/src/` (generators.rs, filters.rs, etc.)
+- **Node registration**: `crates/nodebox-gui/src/node_library.rs` and `node_selection_dialog.rs`
+- **Node evaluation**: `crates/nodebox-gui/src/eval.rs`
+
+## Porting Nodes from Java to Rust
+
+When porting node functions from Java to Rust, follow this checklist:
+
+1. **Find the authoritative definition**: Look up the node in `libraries/corevector/corevector.ndbx` to see `outputType`, `outputRange`, and all `<port>` elements. This is the source of truth.
+
+2. **Verify the return type in Java**: Check the Java method signature in `CoreVectorFunctions.java`. For example, `grid` returns `List<Point>`, not `Geometry`.
+
+3. **Match output type in Rust registration**: When registering the node in `node_library.rs` and `node_selection_dialog.rs`, set:
+   - `.with_output_type(PortType::X)` — must match the `.ndbx` `outputType`
+   - `.with_output_range(PortRange::List)` — if `.ndbx` has `outputRange="list"`
+
+4. **Match all input ports**: Add all `<port>` elements from the `.ndbx` as `.with_input(Port::...)` calls, with matching names, types, and default values.
+
+5. **Match parameter types exactly**: Pay attention to `long` vs `int`, `double` vs `float`. The Java/`.ndbx` source is authoritative.
+
+6. **Preserve edge-case behavior**: Check how the Java code handles edge cases (e.g., `columns=1`). The Rust implementation should match exactly.
+
+7. **Return correct type from eval.rs**: In `execute_node()`, return the appropriate `NodeOutput` variant (e.g., `NodeOutput::Points` for `outputType="point"` + `outputRange="list"`).
+
 ## UI Design System (Rust GUI)
 
 **IMPORTANT: When working on any GUI component, always consult `STYLE_GUIDE.md` first.**

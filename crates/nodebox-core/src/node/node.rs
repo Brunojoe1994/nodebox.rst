@@ -172,6 +172,12 @@ impl Node {
         self
     }
 
+    /// Sets the output range (single value or list).
+    pub fn with_output_range(mut self, output_range: PortRange) -> Self {
+        self.output_range = output_range;
+        self
+    }
+
     /// Sets the category.
     pub fn with_category(mut self, category: impl Into<String>) -> Self {
         self.category = category.into();
