@@ -19,6 +19,7 @@ pub mod eval;
 mod export;
 pub mod handles;
 pub mod history;
+mod icon_cache;
 mod network_view;
 mod node_library;
 mod node_selection_dialog;

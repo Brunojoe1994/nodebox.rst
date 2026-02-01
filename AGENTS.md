@@ -29,8 +29,13 @@ Prereqs: Java JDK and Apache Ant are required; Maven is used for dependency reso
 - Name new Java tests `SomethingTest.java` and keep them close to the package they cover.
 - Run `ant test` before shipping changes that affect core behavior or UI flows.
 
+## Branching Strategy
+- **Use `rewrite-in-rust` as the main branch.** All new development and PRs should target this branch.
+- **NEVER commit or merge directly into `master`.** The `master` branch exists for legacy reasons only and should not be modified.
+- Create feature branches from `rewrite-in-rust` and merge back into it.
+
 ## Commit & Pull Request Guidelines
-- Recent history favors short, sentence-style commit messages (e.g., “Use Ctrl key on Windows.”). Keep messages concise and specific.
+- Recent history favors short, sentence-style commit messages (e.g., "Use Ctrl key on Windows."). Keep messages concise and specific.
 - PRs should describe the user-visible change, list test commands run, and include screenshots or recordings for UI updates.
 - Link relevant issues or tickets when applicable.
 

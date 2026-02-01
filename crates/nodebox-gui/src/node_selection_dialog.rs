@@ -1,8 +1,9 @@
 //! Modal node selection dialog with search and category filtering.
 
-use eframe::egui::{self, Color32, Key, Rect, Vec2};
+use eframe::egui::{self, Color32, Key, Vec2};
 use nodebox_core::geometry::{Color, Point};
 use nodebox_core::node::{Node, NodeLibrary, Port};
+use crate::icon_cache::IconCache;
 use crate::theme;
 
 /// Available node types that can be created.
@@ -244,7 +245,7 @@ impl NodeSelectionDialog {
     }
 
     /// Show the dialog. Returns the selected template if one was chosen.
-    pub fn show(&mut self, ctx: &egui::Context, library: &NodeLibrary) -> Option<Node> {
+    pub fn show(&mut self, ctx: &egui::Context, library: &NodeLibrary, icon_cache: &mut IconCache) -> Option<Node> {
         if !self.visible {
             return None;
         }
@@ -284,7 +285,7 @@ impl NodeSelectionDialog {
             .collapsible(false)
             .resizable(false)
             .title_bar(false) // Custom title bar
-            .fixed_size([360.0, 340.0])
+            .fixed_size([500.0, 400.0])
             .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
             .frame(dialog_frame)
             .show(ctx, |ui| {
@@ -389,7 +390,7 @@ impl NodeSelectionDialog {
 
                 // Node list - clean, minimal styling
                 egui::ScrollArea::vertical()
-                    .max_height(220.0)
+                    .auto_shrink([false, false])
                     .show(ui, |ui| {
                         for (list_idx, &template_idx) in self.filtered_indices.iter().enumerate() {
                             let template = &NODE_TEMPLATES[template_idx];
@@ -418,14 +419,21 @@ impl NodeSelectionDialog {
                                 );
                             }
 
-                            // Small category indicator dot
-                            let dot_center = response.rect.min + Vec2::new(theme::PADDING_LARGE + 4.0, 14.0);
-                            let icon_color = category_color(template.category);
-                            ui.painter().circle_filled(dot_center, 4.0, icon_color);
+                            // Icon (loaded from libraries or fallback)
+                            let icon_pos = response.rect.min + Vec2::new(theme::PADDING_LARGE, 4.0);
+                            let function = format!("corevector/{}", template.name);
+                            icon_cache.draw_icon(
+                                ctx,
+                                ui.painter(),
+                                icon_pos,
+                                20.0,
+                                Some(&function),
+                                template.category,
+                            );
 
                             // Name
                             ui.painter().text(
-                                response.rect.min + Vec2::new(theme::PADDING_LARGE + 16.0, 7.0),
+                                response.rect.min + Vec2::new(theme::PADDING_LARGE + 24.0, 7.0),
                                 egui::Align2::LEFT_TOP,
                                 template.name,
                                 egui::FontId::proportional(11.0),
@@ -471,16 +479,6 @@ impl NodeSelectionDialog {
         }
 
         result
-    }
-}
-
-/// Get color for a category.
-fn category_color(category: &str) -> Color32 {
-    match category {
-        "geometry" => Color32::from_rgb(20, 20, 20),
-        "transform" => Color32::from_rgb(119, 154, 173),
-        "color" => Color32::from_rgb(94, 85, 112),
-        _ => Color32::from_rgb(52, 85, 129),
     }
 }
 
