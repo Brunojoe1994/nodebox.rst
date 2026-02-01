@@ -46,6 +46,8 @@ pub struct NetworkView {
 struct ConnectionDrag {
     /// The output node name.
     from_node: String,
+    /// Output type of the source node (for compatibility checking).
+    output_type: PortType,
     /// Current mouse position (end of wire).
     to_pos: Pos2,
 }
@@ -60,6 +62,10 @@ const NODE_PADDING: f32 = 4.0;
 const PORT_WIDTH: f32 = 12.0;
 const PORT_HEIGHT: f32 = 4.0;
 const PORT_SPACING: f32 = 8.0;
+/// Margin between ports for hit-area calculations.
+const PORT_MARGIN: f32 = 6.0;
+/// Hit area affordance for ports when not connecting.
+const PORT_HEIGHT_AFFORDANCE: f32 = 6.0;
 
 /// Colors matching NodeBox Java Theme.
 const NETWORK_BACKGROUND_COLOR: (u8, u8, u8) = (69, 69, 69);
@@ -180,36 +186,23 @@ impl NetworkView {
         let mut node_to_select = None;
         let mut start_dragging_node: Option<String> = None;
         let mut connection_to_create: Option<(String, String, String)> = None;
+        let mut disconnect_and_reroute: Option<(usize, String, PortType)> = None;
 
-        // First pass: detect port hover states
+        // Detect port hover states using the new hit-testing system
+        let is_connecting = self.creating_connection.is_some();
         if let Some(mouse_pos) = ui.input(|i| i.pointer.hover_pos()) {
-            for child in &network.children {
-                // Check output port hover
-                let output_pos = self.node_output_pos(child, offset);
-                let output_rect = Rect::from_min_size(
-                    output_pos,
-                    Vec2::new(PORT_WIDTH * self.pan_zoom.zoom, PORT_HEIGHT * self.pan_zoom.zoom),
-                )
-                .expand(4.0 * self.pan_zoom.zoom);
-                if output_rect.contains(mouse_pos) {
-                    self.hovered_output = Some(child.name.clone());
+            // Check output port hover (only when NOT connecting, for start-drag feedback)
+            if !is_connecting {
+                if let Some(node_name) = self.find_output_port_at(network, mouse_pos, offset, false) {
+                    self.hovered_output = Some(node_name);
                 }
+            }
 
-                // Check input port hover
-                for (i, port) in child.inputs.iter().enumerate() {
-                    if is_hidden_port(&port.port_type) {
-                        continue;
-                    }
-                    let port_pos = self.node_input_pos(child, i, offset);
-                    let port_rect = Rect::from_min_size(
-                        port_pos,
-                        Vec2::new(PORT_WIDTH * self.pan_zoom.zoom, PORT_HEIGHT * self.pan_zoom.zoom),
-                    )
-                    .expand(4.0 * self.pan_zoom.zoom);
-                    if port_rect.contains(mouse_pos) {
-                        self.hovered_port = Some((child.name.clone(), port.name.clone()));
-                    }
-                }
+            // Check input port hover (use expanded hit area when connecting)
+            if let Some((node_name, port_name, _)) =
+                self.find_input_port_at(network, mouse_pos, offset, is_connecting)
+            {
+                self.hovered_port = Some((node_name, port_name));
             }
         }
 
@@ -236,53 +229,61 @@ impl NetworkView {
                 start_dragging_node = Some(child.name.clone());
             }
 
-            // Draw the node
+            // Draw the node (with connection drag feedback if applicable)
             let is_selected = self.selected.contains(&child.name);
             let is_rendered = network.rendered_child.as_deref() == Some(&child.name);
-            self.draw_node(ui.ctx(), &painter, ui, child, offset, is_selected, is_rendered);
+            let drag_output_type = self.creating_connection.as_ref().map(|c| c.output_type.clone());
+            self.draw_node(ui.ctx(), &painter, network, child, offset, is_selected, is_rendered, drag_output_type.as_ref());
 
             // Check for output port click (to start connection)
-            let output_pos = self.node_output_pos(child, offset);
-            let output_rect = Rect::from_min_size(
-                output_pos,
-                Vec2::new(PORT_WIDTH * self.pan_zoom.zoom, PORT_HEIGHT * self.pan_zoom.zoom),
-            )
-            .expand(4.0 * self.pan_zoom.zoom);
+            // Use normal-sized hit area (no is_connecting inflation for starting)
+            let output_rect = self.output_rect(child, offset, false);
             let output_response = ui.interact(
                 output_rect,
                 ui.id().with(format!("{}_out", child.name)),
                 egui::Sense::drag(),
             );
 
-            if output_response.drag_started() {
+            if output_response.drag_started() && !is_connecting {
+                let output_pos = self.node_output_pos(child, offset);
                 self.creating_connection = Some(ConnectionDrag {
                     from_node: child.name.clone(),
+                    output_type: child.output_type.clone(),
                     to_pos: output_pos,
                 });
             }
 
-            // Check for input port clicks (to complete connection)
-            for (i, port) in child.inputs.iter().enumerate() {
-                if is_hidden_port(&port.port_type) {
-                    continue;
-                }
-                let port_pos = self.node_input_pos(child, i, offset);
-                let port_rect = Rect::from_min_size(
-                    port_pos,
-                    Vec2::new(PORT_WIDTH * self.pan_zoom.zoom, PORT_HEIGHT * self.pan_zoom.zoom),
-                )
-                .expand(4.0 * self.pan_zoom.zoom);
-
-                // If we're dragging a connection and hover over this port
-                if self.creating_connection.is_some() {
+            // Check for input port clicks (disconnect-and-reroute)
+            // Use normal-sized hit areas for clicking (not completing a connection)
+            if !is_connecting {
+                for (i, port) in child.inputs.iter().enumerate() {
+                    if is_hidden_port(&port.port_type) {
+                        continue;
+                    }
+                    let port_rect = self.input_rect(child, i, offset, false);
                     let port_response = ui.interact(
                         port_rect,
-                        ui.id().with(format!("{}_{}", child.name, port.name)),
-                        egui::Sense::hover(),
+                        ui.id().with(format!("{}_{}_click", child.name, port.name)),
+                        egui::Sense::drag(),
                     );
 
-                    if port_response.hovered() {
-                        // Highlight indicator is now handled in draw_node via hovered_port
+                    // If user starts dragging from an occupied input port,
+                    // disconnect the existing connection and start a new drag
+                    // from the upstream output port
+                    if port_response.drag_started() {
+                        if let Some(conn_idx) =
+                            self.find_connection_at_input(network, &child.name, &port.name)
+                        {
+                            let conn = &network.connections[conn_idx];
+                            if let Some(upstream_node) = network.child(&conn.output_node) {
+                                // Queue disconnect and start new connection from upstream
+                                disconnect_and_reroute = Some((
+                                    conn_idx,
+                                    upstream_node.name.clone(),
+                                    upstream_node.output_type.clone(),
+                                ));
+                            }
+                        }
                     }
                 }
             }
@@ -328,28 +329,25 @@ impl NetworkView {
             }
         }
 
-        // Handle connection creation end
+        // Handle connection creation end (use inflated hit areas for easy drop)
         if self.creating_connection.is_some() && ui.input(|i| i.pointer.any_released()) {
             if let Some(hover_pos) = ui.input(|i| i.pointer.hover_pos()) {
-                // Find which input port we're over (using rectangular hit detection)
-                for child in &network.children {
-                    for (i, port) in child.inputs.iter().enumerate() {
-                        if is_hidden_port(&port.port_type) {
-                            continue;
-                        }
-                        let port_pos = self.node_input_pos(child, i, offset);
-                        let port_rect = Rect::from_min_size(
-                            port_pos,
-                            Vec2::new(PORT_WIDTH * self.pan_zoom.zoom, PORT_HEIGHT * self.pan_zoom.zoom),
-                        )
-                        .expand(4.0 * self.pan_zoom.zoom);
-                        if port_rect.contains(hover_pos) {
-                            if let Some(ref drag) = self.creating_connection {
-                                connection_to_create = Some((
-                                    drag.from_node.clone(),
-                                    child.name.clone(),
-                                    port.name.clone(),
-                                ));
+                // Find which input port we're over using inflated hit areas (is_connecting=true)
+                if let Some((node_name, port_name, _)) =
+                    self.find_input_port_at(network, hover_pos, offset, true)
+                {
+                    if let Some(ref drag) = self.creating_connection {
+                        // Check type compatibility before creating connection
+                        if let Some(target_node) = network.child(&node_name) {
+                            if let Some(target_port) = target_node.input(&port_name) {
+                                if PortType::is_compatible(&drag.output_type, &target_port.port_type)
+                                {
+                                    connection_to_create = Some((
+                                        drag.from_node.clone(),
+                                        node_name,
+                                        port_name,
+                                    ));
+                                }
                             }
                         }
                     }
@@ -362,6 +360,21 @@ impl NetworkView {
         if let Some(ref mut drag) = self.creating_connection {
             if let Some(pos) = ui.input(|i| i.pointer.hover_pos()) {
                 drag.to_pos = pos;
+            }
+        }
+
+        // Handle disconnect-and-reroute (remove old connection, start new drag from upstream)
+        if let Some((conn_idx, from_node_name, output_type)) = disconnect_and_reroute {
+            // Remove the old connection
+            library.root.connections.remove(conn_idx);
+            // Start a new connection drag from the upstream node
+            if let Some(from_node) = library.root.child(&from_node_name) {
+                let output_pos = self.node_output_pos(from_node, offset);
+                self.creating_connection = Some(ConnectionDrag {
+                    from_node: from_node_name,
+                    output_type,
+                    to_pos: output_pos,
+                });
             }
         }
 
@@ -480,6 +493,170 @@ impl NetworkView {
         )
     }
 
+    // ========================================================================
+    // Hit Testing Affordances
+    // ========================================================================
+
+    /// Get the hit rectangle for an input port, with contextual inflation.
+    ///
+    /// When `is_connecting` is true, the hit area expands dramatically to make
+    /// dropping connections easier - the entire node body becomes a valid target.
+    fn input_rect(&self, node: &Node, port_index: usize, offset: Vec2, is_connecting: bool) -> Rect {
+        let node_rect = self.node_rect(node, offset);
+        let z = self.pan_zoom.zoom;
+        let port_x = (PORT_WIDTH + PORT_SPACING) * port_index as f32;
+        let port_screen_x = node_rect.left() + port_x * z;
+
+        if is_connecting {
+            // When completing a connection: huge hit area
+            // Width expands to include margin (closing gaps between ports)
+            // Height extends from top of port through entire node body
+            let width = (PORT_WIDTH + PORT_MARGIN) * z;
+            let height = (PORT_HEIGHT + NODE_HEIGHT) * z;
+            Rect::from_min_size(
+                Pos2::new(port_screen_x - (PORT_MARGIN / 2.0) * z, node_rect.top() - PORT_HEIGHT * z),
+                Vec2::new(width, height),
+            )
+        } else {
+            // Normal mode: small hit area with basic affordance
+            Rect::from_min_size(
+                Pos2::new(port_screen_x, node_rect.top() - PORT_HEIGHT * z),
+                Vec2::new(PORT_WIDTH * z, PORT_HEIGHT_AFFORDANCE * z),
+            )
+        }
+    }
+
+    /// Get the hit rectangle for an output port, with contextual inflation.
+    ///
+    /// When `is_connecting` is true, the hit area expands to cover the bottom
+    /// half of the node for hover feedback.
+    fn output_rect(&self, node: &Node, offset: Vec2, is_connecting: bool) -> Rect {
+        let node_rect = self.node_rect(node, offset);
+        let z = self.pan_zoom.zoom;
+
+        if is_connecting {
+            // When connecting: expand to bottom half of node (for hover feedback)
+            Rect::from_min_max(
+                Pos2::new(node_rect.left(), node_rect.center().y),
+                Pos2::new(node_rect.left() + PORT_WIDTH * z, node_rect.bottom() + PORT_HEIGHT * z),
+            )
+        } else {
+            // Normal mode: small hit area with basic affordance
+            Rect::from_min_size(
+                Pos2::new(node_rect.left(), node_rect.bottom()),
+                Vec2::new(PORT_WIDTH * z, PORT_HEIGHT_AFFORDANCE * z),
+            )
+        }
+    }
+
+    /// Multi-point hit test: checks if a point is near a rectangle.
+    ///
+    /// Tests the cursor at four offset positions (±PORT_MARGIN/2 in each axis),
+    /// equivalent to inflating the rect by that amount but without allocating.
+    fn contains_point_multipoint(&self, rect: Rect, point: Pos2) -> bool {
+        let half_margin = (PORT_MARGIN / 2.0) * self.pan_zoom.zoom;
+        let offsets = [
+            Vec2::new(-half_margin, -half_margin),
+            Vec2::new(half_margin, -half_margin),
+            Vec2::new(-half_margin, half_margin),
+            Vec2::new(half_margin, half_margin),
+        ];
+        for offset in offsets {
+            if rect.contains(point + offset) {
+                return true;
+            }
+        }
+        false
+    }
+
+    /// Find the input port at a given screen position using mathematical indexing.
+    ///
+    /// Returns `Some((node_name, port_name, port_index))` if found.
+    fn find_input_port_at(
+        &self,
+        network: &Node,
+        screen_pos: Pos2,
+        offset: Vec2,
+        is_connecting: bool,
+    ) -> Option<(String, String, usize)> {
+        let z = self.pan_zoom.zoom;
+
+        for child in &network.children {
+            let node_rect = self.node_rect(child, offset);
+
+            // Broad-phase rejection: check if we're anywhere near the input port area
+            let port_strip_height = if is_connecting {
+                (PORT_HEIGHT + NODE_HEIGHT) * z
+            } else {
+                PORT_HEIGHT_AFFORDANCE * z
+            };
+            let port_strip = Rect::from_min_size(
+                Pos2::new(node_rect.left(), node_rect.top() - PORT_HEIGHT * z),
+                Vec2::new(node_rect.width(), port_strip_height),
+            );
+
+            // Use multi-point hit test for broad phase
+            if !self.contains_point_multipoint(port_strip, screen_pos) {
+                continue;
+            }
+
+            // Mathematical port indexing: calculate which port cell we're in
+            let local_x = screen_pos.x - node_rect.left() + (PORT_MARGIN / 2.0) * z;
+            let cell_width = (PORT_WIDTH + PORT_SPACING) * z;
+            let port_index = (local_x / cell_width).floor() as usize;
+
+            // Validate against actual port list (skip hidden ports)
+            let visible_ports: Vec<_> = child
+                .inputs
+                .iter()
+                .enumerate()
+                .filter(|(_, p)| !is_hidden_port(&p.port_type))
+                .collect();
+
+            if port_index < visible_ports.len() {
+                let (actual_index, port) = visible_ports[port_index];
+                // Final check: verify the point is within this port's hit rect
+                let port_rect = self.input_rect(child, actual_index, offset, is_connecting);
+                if self.contains_point_multipoint(port_rect, screen_pos) {
+                    return Some((child.name.clone(), port.name.clone(), actual_index));
+                }
+            }
+        }
+        None
+    }
+
+    /// Find the output port at a given screen position.
+    ///
+    /// Returns `Some(node_name)` if found (nodes have only one output).
+    fn find_output_port_at(
+        &self,
+        network: &Node,
+        screen_pos: Pos2,
+        offset: Vec2,
+        is_connecting: bool,
+    ) -> Option<String> {
+        for child in &network.children {
+            let output_rect = self.output_rect(child, offset, is_connecting);
+            if self.contains_point_multipoint(output_rect, screen_pos) {
+                return Some(child.name.clone());
+            }
+        }
+        None
+    }
+
+    /// Find which connection is occupying an input port (if any).
+    fn find_connection_at_input(
+        &self,
+        network: &Node,
+        node_name: &str,
+        port_name: &str,
+    ) -> Option<usize> {
+        network
+            .connections
+            .iter()
+            .position(|c| c.input_node == node_name && c.input_port == port_name)
+    }
+
     /// Draw the background grid (Java NodeBox style).
     fn draw_grid(&self, painter: &egui::Painter, rect: Rect) {
         // Background color
@@ -574,25 +751,30 @@ impl NetworkView {
     }
 
     /// Draw a node (Java NodeBox style).
+    ///
+    /// If `drag_output_type` is provided, input ports will show visual feedback
+    /// indicating type compatibility with the dragged connection.
     fn draw_node(
         &mut self,
         ctx: &egui::Context,
         painter: &egui::Painter,
-        _ui: &egui::Ui,
+        network: &Node,
         node: &Node,
         offset: Vec2,
         is_selected: bool,
         is_rendered: bool,
+        drag_output_type: Option<&PortType>,
     ) {
         let rect = self.node_rect(node, offset);
         let body_color = self.output_type_color(&node.output_type);
+        let z = self.pan_zoom.zoom;
 
         // 1. Selection ring (white fill behind, 2px inset)
         if is_selected {
             painter.rect_filled(rect, 0.0, Color32::WHITE);
             let inset = Rect::from_min_max(
-                rect.min + Vec2::splat(2.0 * self.pan_zoom.zoom),
-                rect.max - Vec2::splat(2.0 * self.pan_zoom.zoom),
+                rect.min + Vec2::splat(2.0 * z),
+                rect.max - Vec2::splat(2.0 * z),
             );
             painter.rect_filled(inset, 0.0, body_color);
         } else {
@@ -603,61 +785,103 @@ impl NetworkView {
         // 2. Rendered indicator (white triangle in bottom-right corner)
         if is_rendered {
             let points = vec![
-                Pos2::new(rect.right() - 2.0 * self.pan_zoom.zoom, rect.bottom() - 20.0 * self.pan_zoom.zoom),
-                Pos2::new(rect.right() - 2.0 * self.pan_zoom.zoom, rect.bottom() - 2.0 * self.pan_zoom.zoom),
-                Pos2::new(rect.right() - 20.0 * self.pan_zoom.zoom, rect.bottom() - 2.0 * self.pan_zoom.zoom),
+                Pos2::new(rect.right() - 2.0 * z, rect.bottom() - 20.0 * z),
+                Pos2::new(rect.right() - 2.0 * z, rect.bottom() - 2.0 * z),
+                Pos2::new(rect.right() - 20.0 * z, rect.bottom() - 2.0 * z),
             ];
             painter.add(egui::Shape::convex_polygon(points, Color32::WHITE, Stroke::NONE));
         }
 
         // 3. Draw icon (26x26 at padding offset)
         let icon_pos = Pos2::new(
-            rect.left() + NODE_PADDING * self.pan_zoom.zoom,
-            rect.top() + NODE_PADDING * self.pan_zoom.zoom,
+            rect.left() + NODE_PADDING * z,
+            rect.top() + NODE_PADDING * z,
         );
         self.draw_node_icon(ctx, painter, icon_pos, node.function.as_deref(), &node.category);
 
         // 4. Draw name (after icon, vertically centered)
-        let name_x = rect.left() + (NODE_ICON_SIZE + NODE_PADDING * 2.0) * self.pan_zoom.zoom;
+        let name_x = rect.left() + (NODE_ICON_SIZE + NODE_PADDING * 2.0) * z;
         let name_y = rect.center().y;
         painter.text(
             Pos2::new(name_x, name_y),
             egui::Align2::LEFT_CENTER,
             &node.name,
-            egui::FontId::proportional(11.0 * self.pan_zoom.zoom),
+            egui::FontId::proportional(11.0 * z),
             Color32::WHITE,
         );
 
-        // 5. Input ports (small rects on top edge)
+        // 5. Input ports (small rects on top edge) with connection-drag feedback
         for (i, port) in node.inputs.iter().enumerate() {
             if is_hidden_port(&port.port_type) {
                 continue;
             }
             let port_pos = self.node_input_pos(node, i, offset);
-            let port_rect = Rect::from_min_size(
-                port_pos,
-                Vec2::new(PORT_WIDTH * self.pan_zoom.zoom, PORT_HEIGHT * self.pan_zoom.zoom),
-            );
-            let color = if self
+
+            // Determine if this port is hovered
+            let is_hovered = self
                 .hovered_port
                 .as_ref()
-                .is_some_and(|(n, p)| n == &node.name && p == &port.name)
-            {
-                Color32::YELLOW
+                .is_some_and(|(n, p)| n == &node.name && p == &port.name);
+
+            // Determine if this port is already connected
+            let is_connected = network
+                .connections
+                .iter()
+                .any(|c| c.input_node == node.name && c.input_port == port.name);
+
+            // Calculate port size and color based on drag state
+            let (port_height, color) = if let Some(output_type) = drag_output_type {
+                // We're dragging a connection - show type compatibility feedback
+                let is_compatible = PortType::is_compatible(output_type, &port.port_type);
+                let is_exact_match = output_type == &port.port_type;
+
+                if is_hovered && is_compatible {
+                    // Hovered and compatible: bright yellow, normal size
+                    (PORT_HEIGHT, Color32::YELLOW)
+                } else if is_compatible {
+                    // Compatible but not hovered: show inflated hit area indicator
+                    // Unconnected ports get larger highlight to show the inflated hit zone
+                    let height = if is_connected {
+                        PORT_HEIGHT + 2.0
+                    } else {
+                        PORT_HEIGHT + 4.0
+                    };
+                    let color = if is_exact_match {
+                        // Exact type match: brighter highlight
+                        Color32::from_rgb(180, 200, 140)
+                    } else {
+                        // Convertible: dimmer highlight
+                        Color32::from_rgb(140, 160, 120)
+                    };
+                    (height, color)
+                } else {
+                    // Incompatible: minimal visual, dimmed
+                    (PORT_HEIGHT - 1.0, Color32::from_rgb(60, 60, 60))
+                }
+            } else if is_hovered {
+                // Not dragging, but hovered: yellow highlight
+                (PORT_HEIGHT, Color32::YELLOW)
             } else {
-                self.port_type_color(&port.port_type)
+                // Normal state: standard port color
+                (PORT_HEIGHT, self.port_type_color(&port.port_type))
             };
+
+            let port_rect = Rect::from_min_size(
+                port_pos,
+                Vec2::new(PORT_WIDTH * z, port_height * z),
+            );
             painter.rect_filled(port_rect, 0.0, color);
         }
 
         // 6. Output port (small rect at bottom left)
+        // Only show hover highlight when NOT dragging a connection
         let out_pos = self.node_output_pos(node, offset);
         let out_rect = Rect::from_min_size(
             out_pos,
-            Vec2::new(PORT_WIDTH * self.pan_zoom.zoom, PORT_HEIGHT * self.pan_zoom.zoom),
+            Vec2::new(PORT_WIDTH * z, PORT_HEIGHT * z),
         );
         let out_color = if self.hovered_output.as_ref() == Some(&node.name)
-            && self.creating_connection.is_none()
+            && drag_output_type.is_none()
         {
             Color32::YELLOW
         } else {
