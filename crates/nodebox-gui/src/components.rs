@@ -26,11 +26,26 @@ pub fn draw_pane_header_with_title(
         egui::Sense::hover(),
     );
 
-    // Header background
+    // Pixel-align the rect for crisp borders
+    let aligned_rect = Rect::from_min_max(
+        egui::pos2(header_rect.min.x.floor(), header_rect.min.y.floor()),
+        egui::pos2(header_rect.max.x.ceil(), header_rect.max.y.floor()),
+    );
+
+    // Header background (fills the entire rect including border areas)
     ui.painter().rect_filled(
-        header_rect,
+        aligned_rect,
         0.0,
         theme::PANE_HEADER_BACKGROUND_COLOR,
+    );
+
+    // Top border (1px light line) - draw at top edge
+    ui.painter().line_segment(
+        [
+            egui::pos2(aligned_rect.left(), aligned_rect.top() + 0.5),
+            egui::pos2(aligned_rect.right(), aligned_rect.top() + 0.5),
+        ],
+        egui::Stroke::new(1.0, theme::SLATE_700),
     );
 
     // Title on left (UPPERCASE)
@@ -57,11 +72,11 @@ pub fn draw_pane_header_with_title(
         egui::Stroke::new(1.0, theme::TEXT_DISABLED),
     );
 
-    // Bottom border (1px dark line)
+    // Bottom border (1px dark line) - draw at bottom edge
     ui.painter().line_segment(
         [
-            egui::pos2(header_rect.left(), header_rect.bottom()),
-            egui::pos2(header_rect.right(), header_rect.bottom()),
+            egui::pos2(aligned_rect.left(), aligned_rect.bottom() - 0.5),
+            egui::pos2(aligned_rect.right(), aligned_rect.bottom() - 0.5),
         ],
         egui::Stroke::new(1.0, theme::SLATE_950),
     );
