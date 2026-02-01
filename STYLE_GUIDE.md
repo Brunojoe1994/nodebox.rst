@@ -12,7 +12,7 @@ NodeBox follows a **Figma-inspired design philosophy** with these core principle
 
 ### 1. Angular & Geometric
 - **Square edges preferred** over excessive rounding
-- Corner radii: `6px` for panels/windows, `4px` for small widgets
+- Corner radii: `4px` for all elements (panels, windows, widgets)
 - No decorative curves or ornamental shapes
 - Grid-aligned elements create visual harmony
 
@@ -158,7 +158,7 @@ All spacing follows an **8px grid** for visual consistency.
 | `PADDING_LARGE` | 12px | Button padding, panel margins |
 | `VIEW_PADDING` | 12px | Outer panel padding |
 | `ITEM_SPACING` | 8px | Space between list items |
-| `INDENT` | 14px | Hierarchical indentation |
+| `INDENT` | 16px | Hierarchical indentation |
 | `ICON_TEXT_PADDING` | 4px | Icon-to-text gap |
 
 ### Layout Heights
@@ -168,7 +168,7 @@ All spacing follows an **8px grid** for visual consistency.
 | `TOP_BAR_HEIGHT` | 28px | Address bar, toolbar |
 | `TITLE_BAR_HEIGHT` | 24px | Pane headers |
 | `LIST_ITEM_HEIGHT` | 24px | List items, tree nodes |
-| `ROW_HEIGHT` | 22px | Parameter rows, table rows |
+| `ROW_HEIGHT` | 24px | Parameter rows, table rows |
 | `TABLE_HEADER_HEIGHT` | 32px | Table headers |
 
 ### Spacing Principles
@@ -273,7 +273,7 @@ egui::Window::new("Add Node")
 - Fixed size (no resizing by default)
 - Background: `PANEL_BG`
 - Border: 1px `BORDER_COLOR`
-- Corner radius: `6px`
+- Corner radius: `4px`
 - No drop shadow
 
 ### Separators
@@ -347,7 +347,7 @@ ui.painter().rect_filled(line_rect, 0.0, BORDER_COLOR);
 ┌─────────────────────────────────────┐
 │ PARAMETERS    separator   Node Name │  ← Header (24px)
 ├─────────────────────────────────────┤
-│ Label          │ Value              │  ← Row (22px each)
+│ Label          │ Value              │  ← Row (24px each)
 │ Label          │ Value              │
 │ Label          │ Value              │
 │ ...                                 │
@@ -356,9 +356,9 @@ ui.painter().rect_filled(line_rect, 0.0, BORDER_COLOR);
 
 - Label width: `100px` fixed
 - Value: fills remaining space
-- Row height: `22px`
+- Row height: `24px`
 - Horizontal spacing: `8px`
-- Vertical spacing: `2px` between rows (dense layout)
+- Vertical spacing: `0px` between rows (dense layout)
 
 ### Grid Alignment
 
@@ -366,9 +366,11 @@ The network view uses a 48px grid:
 
 ```
 GRID_CELL_SIZE = 48px
-NODE_WIDTH = 132px (3 cells - margins)
-NODE_HEIGHT = 36px (1 cell - margins)
-NODE_MARGIN = 6px
+NODE_MARGIN = 8px
+NODE_WIDTH = 128px (48×3 - 8×2)
+NODE_HEIGHT = 32px (48×1 - 8×2)
+NODE_PADDING = 4px
+NODE_ICON_SIZE = 24px
 ```
 
 ---

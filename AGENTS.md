@@ -49,7 +49,7 @@ Prereqs: Java JDK and Apache Ant are required; Maven is used for dependency reso
 
 The NodeBox GUI follows a Figma-inspired design philosophy:
 
-- **Angular & geometric** — square edges, minimal rounding (6px panels, 4px widgets)
+- **Angular & geometric** — square edges, minimal rounding (4px for all elements)
 - **Typography-driven** — use text size/color for hierarchy, not decoration
 - **Space over lines** — whitespace delineates sections, borders are structural only
 - **Subtle & functional** — no shadows, minimal hover effects, every element has purpose

@@ -107,11 +107,11 @@ pub const LIST_ITEM_HEIGHT: f32 = 24.0;
 /// Table header height
 pub const TABLE_HEADER_HEIGHT: f32 = 32.0;
 /// Standard row height
-pub const ROW_HEIGHT: f32 = 22.0;
+pub const ROW_HEIGHT: f32 = 24.0;
 
 // Legacy constants (for compatibility)
 pub const ADDRESS_BAR_HEIGHT: f32 = TOP_BAR_HEIGHT;
-pub const ANIMATION_BAR_HEIGHT: f32 = 27.0;
+pub const ANIMATION_BAR_HEIGHT: f32 = 28.0;
 pub const PANE_HEADER_HEIGHT: f32 = TITLE_BAR_HEIGHT;
 pub const LABEL_WIDTH: f32 = 100.0;
 
@@ -143,7 +143,7 @@ pub const ITEM_SPACING: f32 = 8.0;
 /// Menu item spacing
 pub const MENU_SPACING: f32 = 1.0;
 /// Indent for hierarchical items
-pub const INDENT: f32 = 14.0;
+pub const INDENT: f32 = 16.0;
 /// Icon to text padding
 pub const ICON_TEXT_PADDING: f32 = 4.0;
 
@@ -152,17 +152,17 @@ pub const ICON_TEXT_PADDING: f32 = 4.0;
 // =============================================================================
 
 /// Standard corner radius
-pub const CORNER_RADIUS: f32 = 6.0;
+pub const CORNER_RADIUS: f32 = 4.0;
 /// Small corner radius (widgets)
 pub const CORNER_RADIUS_SMALL: f32 = 4.0;
 /// Large button size
-pub const BUTTON_SIZE_LARGE: f32 = 22.0;
+pub const BUTTON_SIZE_LARGE: f32 = 24.0;
 /// Button icon size
 pub const BUTTON_ICON_SIZE: f32 = 12.0;
 /// Small icon size
-pub const ICON_SIZE_SMALL: f32 = 14.0;
+pub const ICON_SIZE_SMALL: f32 = 16.0;
 /// Scroll bar width
-pub const SCROLL_BAR_WIDTH: f32 = 6.0;
+pub const SCROLL_BAR_WIDTH: f32 = 8.0;
 
 // =============================================================================
 // TYPOGRAPHY

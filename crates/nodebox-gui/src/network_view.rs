@@ -52,14 +52,14 @@ struct ConnectionDrag {
 
 /// Visual constants (matching NodeBox Java).
 const GRID_CELL_SIZE: f32 = 48.0;
-const NODE_MARGIN: f32 = 6.0;
-const NODE_WIDTH: f32 = 132.0; // 48*3 - 6*2
-const NODE_HEIGHT: f32 = 36.0; // 48 - 6*2
-const NODE_ICON_SIZE: f32 = 26.0;
-const NODE_PADDING: f32 = 5.0;
-const PORT_WIDTH: f32 = 10.0;
-const PORT_HEIGHT: f32 = 3.0;
-const PORT_SPACING: f32 = 10.0;
+const NODE_MARGIN: f32 = 8.0;
+const NODE_WIDTH: f32 = 128.0; // 48*3 - 8*2
+const NODE_HEIGHT: f32 = 32.0; // 48 - 8*2
+const NODE_ICON_SIZE: f32 = 24.0;
+const NODE_PADDING: f32 = 4.0;
+const PORT_WIDTH: f32 = 12.0;
+const PORT_HEIGHT: f32 = 4.0;
+const PORT_SPACING: f32 = 8.0;
 
 /// Colors matching NodeBox Java Theme.
 const NETWORK_BACKGROUND_COLOR: (u8, u8, u8) = (69, 69, 69);
