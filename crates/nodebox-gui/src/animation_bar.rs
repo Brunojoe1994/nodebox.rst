@@ -187,7 +187,7 @@ impl AnimationBar {
 
         // Clean background - seamless with panel
         let rect = ui.available_rect_before_wrap();
-        ui.painter().rect_filled(rect, 0.0, theme::PANEL_BG);
+        ui.painter().rect_filled(rect, 0.0, theme::ANIMATION_BAR_BACKGROUND);
 
         // Subtle top border only
         ui.painter().line_segment(
@@ -199,15 +199,15 @@ impl AnimationBar {
         );
 
         ui.horizontal(|ui| {
-            ui.add_space(theme::PADDING);
+            ui.add_space(theme::PADDING_SMALL);
 
-            // Compact playback controls - smaller buttons
-            if ui.small_button("⏮").on_hover_text("Rewind").clicked() {
+            // Playback control buttons - flush with bar height, transparent background
+            if self.icon_button(ui, "⏮", "Rewind") {
                 self.rewind();
                 event = AnimationEvent::Rewind;
             }
 
-            if ui.small_button("⏪").on_hover_text("Step backward").clicked() {
+            if self.icon_button(ui, "⏪", "Step backward") {
                 self.step_backward();
                 event = AnimationEvent::StepBack;
             }
@@ -217,7 +217,7 @@ impl AnimationBar {
             } else {
                 ("▶", "Play")
             };
-            if ui.small_button(play_icon).on_hover_text(play_tooltip).clicked() {
+            if self.icon_button(ui, play_icon, play_tooltip) {
                 if self.is_playing() {
                     self.pause();
                     event = AnimationEvent::Pause;
@@ -227,28 +227,28 @@ impl AnimationBar {
                 }
             }
 
-            if ui.small_button("⏩").on_hover_text("Step forward").clicked() {
+            if self.icon_button(ui, "⏩", "Step forward") {
                 self.step_forward();
                 event = AnimationEvent::StepForward;
             }
 
-            if ui.small_button("⏭").on_hover_text("Go to end").clicked() {
+            if self.icon_button(ui, "⏭", "Go to end") {
                 self.go_to_end();
                 event = AnimationEvent::GoToEnd;
             }
 
-            if ui.small_button("⏹").on_hover_text("Stop").clicked() {
+            if self.icon_button(ui, "⏹", "Stop") {
                 self.stop();
                 event = AnimationEvent::Stop;
             }
 
             ui.add_space(theme::PADDING);
 
-            // Frame counter - more compact
+            // Frame counter
             ui.label(
                 egui::RichText::new("Frame")
                     .color(theme::TEXT_SUBDUED)
-                    .size(10.0),
+                    .size(theme::FONT_SIZE_SMALL),
             );
             let mut frame = self.frame as i32;
             let frame_response = ui.add(
@@ -264,16 +264,16 @@ impl AnimationBar {
             ui.label(
                 egui::RichText::new(format!("/{}", self.end_frame))
                     .color(theme::TEXT_DISABLED)
-                    .size(10.0),
+                    .size(theme::FONT_SIZE_SMALL),
             );
 
             ui.add_space(theme::PADDING);
 
-            // FPS control - more compact
+            // FPS control
             ui.label(
                 egui::RichText::new("FPS")
                     .color(theme::TEXT_SUBDUED)
-                    .size(10.0),
+                    .size(theme::FONT_SIZE_SMALL),
             );
             let mut fps = self.fps as i32;
             let fps_response = ui.add(
@@ -288,15 +288,50 @@ impl AnimationBar {
 
             ui.add_space(theme::PADDING);
 
-            // Loop toggle - subtle checkbox
+            // Loop toggle
             ui.checkbox(&mut self.loop_enabled, "");
             ui.label(
                 egui::RichText::new("Loop")
                     .color(if self.loop_enabled { theme::TEXT_DEFAULT } else { theme::TEXT_SUBDUED })
-                    .size(10.0),
+                    .size(theme::FONT_SIZE_SMALL),
             );
         });
 
         event
+    }
+
+    /// Custom icon button with transparent background and hover effect.
+    /// Returns true if clicked.
+    fn icon_button(&self, ui: &mut egui::Ui, icon: &str, tooltip: &str) -> bool {
+        let button_size = egui::vec2(theme::ANIMATION_BAR_HEIGHT, theme::ANIMATION_BAR_HEIGHT);
+        let (rect, response) = ui.allocate_exact_size(button_size, egui::Sense::click());
+
+        if ui.is_rect_visible(rect) {
+            // Transparent background, lighter on hover
+            let bg_color = if response.hovered() {
+                theme::SLATE_800
+            } else {
+                egui::Color32::TRANSPARENT
+            };
+
+            ui.painter().rect_filled(rect, 0.0, bg_color);
+
+            // Icon color - brighter on hover
+            let text_color = if response.hovered() {
+                theme::TEXT_STRONG
+            } else {
+                theme::TEXT_DEFAULT
+            };
+
+            ui.painter().text(
+                rect.center(),
+                egui::Align2::CENTER_CENTER,
+                icon,
+                egui::FontId::proportional(theme::FONT_SIZE_BASE),
+                text_color,
+            );
+        }
+
+        response.on_hover_text(tooltip).clicked()
     }
 }
