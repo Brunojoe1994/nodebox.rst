@@ -6,7 +6,7 @@
 
 use eframe::egui;
 use nodebox_core::geometry::{Color, Point};
-use nodebox_core::node::{Node, NodeLibrary, Port};
+use nodebox_core::node::{Node, NodeLibrary, Port, PortRange, PortType};
 
 /// Available node types that can be created.
 pub struct NodeTemplate {
@@ -279,10 +279,13 @@ fn create_node_from_template(template: &NodeTemplate, library: &NodeLibrary) -> 
         }
         "grid" => {
             node = node
-                .with_input(Port::int("rows", 5))
-                .with_input(Port::int("columns", 5))
-                .with_input(Port::float("width", 200.0))
-                .with_input(Port::float("height", 200.0));
+                .with_input(Port::int("columns", 10))
+                .with_input(Port::int("rows", 10))
+                .with_input(Port::float("width", 300.0))
+                .with_input(Port::float("height", 300.0))
+                .with_input(Port::point("position", Point::ZERO))
+                .with_output_type(PortType::Point)
+                .with_output_range(PortRange::List);
         }
         "translate" => {
             node = node

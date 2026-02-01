@@ -1,7 +1,7 @@
 //! Network evaluation - executes node graphs to produce geometry.
 
 use std::collections::HashMap;
-use nodebox_core::geometry::{Path, Point, Color};
+use nodebox_core::geometry::{Path, Point, Color, Contour, PathPoint, PointType};
 use nodebox_core::node::{Node, NodeLibrary};
 use nodebox_core::Value;
 
@@ -36,6 +36,31 @@ impl NodeOutput {
         match self {
             NodeOutput::Path(p) => vec![p.clone()],
             NodeOutput::Paths(ps) => ps.clone(),
+            NodeOutput::Point(pt) => {
+                // Convert a single point to a path with one point
+                let mut path = Path::new();
+                path.fill = None; // Points don't have fill
+                let contour = Contour::from_points(
+                    vec![PathPoint::new(pt.x, pt.y, PointType::LineTo)],
+                    false,
+                );
+                path.contours.push(contour);
+                vec![path]
+            }
+            NodeOutput::Points(pts) => {
+                // Convert points to a path where each point is in a single contour
+                // This allows the viewer's draw_points to render them
+                let mut path = Path::new();
+                path.fill = None; // Points don't have fill
+                for pt in pts {
+                    let contour = Contour::from_points(
+                        vec![PathPoint::new(pt.x, pt.y, PointType::LineTo)],
+                        false,
+                    );
+                    path.contours.push(contour);
+                }
+                vec![path]
+            }
             _ => Vec::new(),
         }
     }
