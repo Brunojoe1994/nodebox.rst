@@ -6,6 +6,8 @@
 
 #[cfg(target_os = "macos")]
 use muda::{Menu, MenuItem, PredefinedMenuItem, Submenu, accelerator::Accelerator, MenuEvent};
+#[cfg(target_os = "macos")]
+use std::cell::Cell;
 
 /// Menu item identifiers for handling menu events.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -32,7 +34,8 @@ pub enum MenuAction {
 /// Handle to the native menu, with item IDs for event handling.
 #[cfg(target_os = "macos")]
 pub struct NativeMenuHandle {
-    _menu: Menu,
+    menu: Menu,
+    initialized: Cell<bool>,
     new_id: muda::MenuId,
     open_id: muda::MenuId,
     save_id: muda::MenuId,
@@ -145,11 +148,12 @@ impl NativeMenuHandle {
         menu.append(&window_menu).unwrap();
         menu.append(&help_menu).unwrap();
 
-        // Initialize for macOS
-        menu.init_for_nsapp();
+        // Note: init_for_nsapp() is called lazily in poll_event()
+        // because NSApplication must exist first (created by eframe)
 
         Self {
-            _menu: menu,
+            menu,
+            initialized: Cell::new(false),
             new_id,
             open_id,
             save_id,
@@ -165,8 +169,20 @@ impl NativeMenuHandle {
         }
     }
 
+    /// Ensure the menu is initialized for NSApp.
+    /// Must be called after NSApplication exists (i.e., after eframe starts).
+    fn ensure_initialized(&self) {
+        if !self.initialized.get() {
+            self.menu.init_for_nsapp();
+            self.initialized.set(true);
+        }
+    }
+
     /// Poll for menu events and return any action.
     pub fn poll_event(&self) -> Option<MenuAction> {
+        // Lazily initialize the menu for NSApp on first poll
+        self.ensure_initialized();
+
         if let Ok(event) = MenuEvent::receiver().try_recv() {
             if event.id == self.new_id {
                 return Some(MenuAction::New);

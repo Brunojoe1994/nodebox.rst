@@ -260,6 +260,11 @@ impl ViewerPane {
         self.pan_zoom.reset();
     }
 
+    /// Reset zoom to 100% (actual size).
+    pub fn reset_zoom(&mut self) {
+        self.pan_zoom.reset();
+    }
+
     /// Get a mutable reference to the handles.
     #[allow(dead_code)]
     pub fn handles_mut(&mut self) -> &mut Option<HandleSet> {

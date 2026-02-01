@@ -53,8 +53,8 @@ pub fn run() -> eframe::Result<()> {
     env_logger::init();
 
     // Initialize native menu bar (macOS)
-    // Must be done before eframe starts, and menu handle must be kept alive
-    let _native_menu = NativeMenuHandle::new();
+    // Must be done before eframe starts, and menu handle is passed to the app
+    let native_menu = NativeMenuHandle::new();
 
     // Get initial file from command line arguments
     let initial_file: Option<PathBuf> = std::env::args()
@@ -75,6 +75,6 @@ pub fn run() -> eframe::Result<()> {
     eframe::run_native(
         "NodeBox",
         options,
-        Box::new(move |cc| Ok(Box::new(NodeBoxApp::new_with_file(cc, initial_file)))),
+        Box::new(move |cc| Ok(Box::new(NodeBoxApp::new_with_file(cc, initial_file, Some(native_menu))))),
     )
 }
