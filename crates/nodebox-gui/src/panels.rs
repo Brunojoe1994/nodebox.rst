@@ -56,40 +56,41 @@ impl ParameterPanel {
 
             // Find the node in the library for mutation
             if let Some(node) = state.library.root.child_mut(&node_name) {
-                // Selection header - light gray bar with node name left, type right
-                let header_rect = ui.available_rect_before_wrap();
-                let header_rect = egui::Rect::from_min_size(
-                    header_rect.min,
-                    egui::vec2(header_rect.width(), theme::PARAMETER_ROW_HEIGHT),
+                // Selection header - shows selected node name and type
+                let header_height = theme::PARAMETER_ROW_HEIGHT;
+                let (header_rect, _) = ui.allocate_exact_size(
+                    egui::vec2(ui.available_width(), header_height),
+                    egui::Sense::hover(),
                 );
+
                 ui.painter().rect_filled(
                     header_rect,
                     0.0,
-                    Color32::from_rgb(75, 75, 75),
+                    theme::HEADER_BACKGROUND,
                 );
-                ui.allocate_new_ui(egui::UiBuilder::new().max_rect(header_rect), |ui| {
-                    ui.horizontal_centered(|ui| {
-                        ui.add_space(8.0);
-                        // Node name on left
-                        ui.label(
-                            egui::RichText::new(node_display_name.as_deref().unwrap_or(&node.name))
-                                .color(theme::TEXT_BRIGHT)
-                                .size(11.0),
-                        );
-                        // Push type to the right
-                        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                            ui.add_space(8.0);
-                            if let Some(ref proto) = node_prototype {
-                                ui.label(
-                                    egui::RichText::new(proto)
-                                        .color(theme::TEXT_DISABLED)
-                                        .size(11.0),
-                                );
-                            }
-                        });
-                    });
-                });
-                ui.add_space(theme::PARAMETER_ROW_HEIGHT + 8.0);
+
+                // Node name on left
+                ui.painter().text(
+                    header_rect.left_center() + egui::vec2(theme::PADDING, 0.0),
+                    egui::Align2::LEFT_CENTER,
+                    node_display_name.as_deref().unwrap_or(&node.name),
+                    egui::FontId::proportional(11.0),
+                    theme::TEXT_BRIGHT,
+                );
+
+                // Prototype on right
+                if let Some(ref proto) = node_prototype {
+                    ui.painter().text(
+                        header_rect.right_center() - egui::vec2(theme::PADDING, 0.0),
+                        egui::Align2::RIGHT_CENTER,
+                        proto,
+                        egui::FontId::proportional(11.0),
+                        theme::TEXT_DISABLED,
+                    );
+                }
+
+                // Small spacing before parameters
+                ui.add_space(theme::PADDING_SMALL);
 
                 // Clone node_name for use in closure
                 let node_name_clone = node_name.clone();
@@ -534,38 +535,32 @@ impl ParameterPanel {
                 ui.add_space(30.0);
                 ui.label(
                     egui::RichText::new(err)
-                        .color(Color32::from_rgb(255, 100, 100))
+                        .color(theme::ERROR_RED)
                         .size(12.0),
                 );
             });
         } else {
-            // Show document properties header
-            let header_rect = ui.available_rect_before_wrap();
-            let header_rect = egui::Rect::from_min_size(
-                header_rect.min,
-                egui::vec2(header_rect.width(), theme::PARAMETER_ROW_HEIGHT),
+            // Show document header
+            let header_height = theme::PARAMETER_ROW_HEIGHT;
+            let (header_rect, _) = ui.allocate_exact_size(
+                egui::vec2(ui.available_width(), header_height),
+                egui::Sense::hover(),
             );
-            ui.painter().rect_filled(
-                header_rect,
-                0.0,
-                Color32::from_rgb(75, 75, 75),
-            );
-            ui.allocate_new_ui(egui::UiBuilder::new().max_rect(header_rect), |ui| {
-                ui.horizontal_centered(|ui| {
-                    ui.add_space(8.0);
-                    ui.label(
-                        egui::RichText::new("Document")
-                            .color(theme::TEXT_BRIGHT)
-                            .size(11.0),
-                    );
-                });
-            });
-            ui.add_space(theme::PARAMETER_ROW_HEIGHT + 8.0);
 
-            // Document properties will be shown in show() method
-            // This is just for the error/no-document case
+            ui.painter().rect_filled(header_rect, 0.0, theme::HEADER_BACKGROUND);
+            ui.painter().text(
+                header_rect.left_center() + egui::vec2(theme::PADDING, 0.0),
+                egui::Align2::LEFT_CENTER,
+                "Document",
+                egui::FontId::proportional(11.0),
+                theme::TEXT_BRIGHT,
+            );
+
+            ui.add_space(theme::PADDING_SMALL);
+
+            // Hint text
             ui.vertical_centered(|ui| {
-                ui.add_space(10.0);
+                ui.add_space(theme::PADDING);
                 ui.label(
                     egui::RichText::new("Select a node to edit parameters")
                         .color(theme::TEXT_DISABLED)
@@ -581,27 +576,22 @@ impl ParameterPanel {
         ui.style_mut().spacing.item_spacing = egui::vec2(8.0, 2.0);
 
         // Document properties header
-        let header_rect = ui.available_rect_before_wrap();
-        let header_rect = egui::Rect::from_min_size(
-            header_rect.min,
-            egui::vec2(header_rect.width(), theme::PARAMETER_ROW_HEIGHT),
+        let header_height = theme::PARAMETER_ROW_HEIGHT;
+        let (header_rect, _) = ui.allocate_exact_size(
+            egui::vec2(ui.available_width(), header_height),
+            egui::Sense::hover(),
         );
-        ui.painter().rect_filled(
-            header_rect,
-            0.0,
-            Color32::from_rgb(75, 75, 75),
+
+        ui.painter().rect_filled(header_rect, 0.0, theme::HEADER_BACKGROUND);
+        ui.painter().text(
+            header_rect.left_center() + egui::vec2(theme::PADDING, 0.0),
+            egui::Align2::LEFT_CENTER,
+            "Document",
+            egui::FontId::proportional(11.0),
+            theme::TEXT_BRIGHT,
         );
-        ui.allocate_new_ui(egui::UiBuilder::new().max_rect(header_rect), |ui| {
-            ui.horizontal_centered(|ui| {
-                ui.add_space(8.0);
-                ui.label(
-                    egui::RichText::new("Document")
-                        .color(theme::TEXT_BRIGHT)
-                        .size(11.0),
-                );
-            });
-        });
-        ui.add_space(theme::PARAMETER_ROW_HEIGHT + 8.0);
+
+        ui.add_space(theme::PADDING_SMALL);
 
         // Width
         ui.horizontal(|ui| {

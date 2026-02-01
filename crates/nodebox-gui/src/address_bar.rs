@@ -64,51 +64,54 @@ impl AddressBar {
         let mut clicked_path = None;
         self.hovered_segment = None;
 
-        // Background
+        // Clean background - uses panel bg for seamless integration
         let rect = ui.available_rect_before_wrap();
-        ui.painter().rect_filled(rect, 0.0, theme::ADDRESS_BAR_BACKGROUND);
+        ui.painter().rect_filled(rect, 0.0, theme::PANEL_BG);
+
+        // Subtle bottom border only
+        ui.painter().line_segment(
+            [
+                egui::pos2(rect.min.x, rect.max.y - 1.0),
+                egui::pos2(rect.max.x, rect.max.y - 1.0),
+            ],
+            egui::Stroke::new(1.0, theme::BORDER_COLOR),
+        );
 
         ui.horizontal(|ui| {
-            ui.add_space(8.0);
+            ui.add_space(theme::PADDING);
 
-            // Draw path segments with separators
+            // Draw path segments with separators - smaller, more subtle
             for (i, segment) in self.segments.iter().enumerate() {
                 // Separator (except before first segment)
                 if i > 0 {
                     ui.label(
-                        egui::RichText::new(" > ")
-                            .color(theme::ADDRESS_SEPARATOR_COLOR)
-                            .size(12.0),
+                        egui::RichText::new("/")
+                            .color(theme::TEXT_DISABLED)
+                            .size(11.0),
                     );
                 }
 
-                // Segment as clickable text
+                // Segment as clickable text - subtle styling
+                let is_last = i == self.segments.len() - 1;
+                let text_color = if is_last {
+                    theme::TEXT_DEFAULT
+                } else {
+                    theme::TEXT_SUBDUED
+                };
+
                 let response = ui.add(
                     egui::Label::new(
                         egui::RichText::new(segment)
-                            .color(theme::TEXT_NORMAL)
-                            .size(12.0),
+                            .color(text_color)
+                            .size(11.0),
                     )
                     .sense(Sense::click()),
                 );
 
-                // Hover effect
+                // Subtle hover effect
                 if response.hovered() {
                     self.hovered_segment = Some(i);
-                    // Draw hover background
-                    ui.painter().rect_filled(
-                        response.rect.expand(2.0),
-                        2.0,
-                        theme::ADDRESS_SEGMENT_HOVER,
-                    );
-                    // Redraw the text on top
-                    ui.painter().text(
-                        response.rect.center(),
-                        egui::Align2::CENTER_CENTER,
-                        segment,
-                        egui::FontId::proportional(12.0),
-                        theme::TEXT_BRIGHT,
-                    );
+                    ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
                 }
 
                 // Handle click - navigate to this segment's path
@@ -123,12 +126,12 @@ impl AddressBar {
 
             // Right-aligned status message
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                ui.add_space(8.0);
+                ui.add_space(theme::PADDING);
                 if !self.message.is_empty() {
                     ui.label(
                         egui::RichText::new(&self.message)
                             .color(theme::TEXT_DISABLED)
-                            .size(11.0),
+                            .size(10.0),
                     );
                 }
             });
