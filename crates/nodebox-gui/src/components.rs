@@ -32,20 +32,11 @@ pub fn draw_pane_header_with_title(
         egui::pos2(header_rect.max.x.ceil(), header_rect.max.y.floor()),
     );
 
-    // Header background (fills the entire rect including border areas)
+    // Header background
     ui.painter().rect_filled(
         aligned_rect,
         0.0,
         theme::PANE_HEADER_BACKGROUND_COLOR,
-    );
-
-    // Top border (1px light line) - draw at top edge
-    ui.painter().line_segment(
-        [
-            egui::pos2(aligned_rect.left(), aligned_rect.top() + 0.5),
-            egui::pos2(aligned_rect.right(), aligned_rect.top() + 0.5),
-        ],
-        egui::Stroke::new(1.0, theme::SLATE_700),
     );
 
     // Title on left (UPPERCASE)

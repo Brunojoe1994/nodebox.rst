@@ -275,6 +275,9 @@ impl ViewerPane {
     /// Show the viewer pane with header tabs and toolbar.
     /// Returns any handle interaction result.
     pub fn show(&mut self, ui: &mut egui::Ui, state: &AppState) -> HandleResult {
+        // Remove spacing so content is snug against header
+        ui.spacing_mut().item_spacing = egui::vec2(0.0, 0.0);
+
         // Draw header with "VIEWER" title and separator
         let (header_rect, mut x) = components::draw_pane_header_with_title(ui, "Viewer");
 
