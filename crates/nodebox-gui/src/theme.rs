@@ -1,10 +1,11 @@
-//! Centralized theme constants inspired by Rerun's refined design system.
+//! Centralized theme constants inspired by Linear's refined dark design.
 //!
-//! Design tokens are organized by:
-//! - Gray scale (dark theme optimized)
-//! - Semantic colors (panel backgrounds, text, etc.)
-//! - Spacing and layout constants
-//! - Typography settings
+//! Design principles:
+//! - Deep, rich dark backgrounds with subtle cool undertones
+//! - Purple/violet accent color for selections and highlights
+//! - Rounded corners (8px large, 4px small) for a softer feel
+//! - Minimal borders - use background color differentiation instead
+//! - Generous spacing for a breathable, modern look
 //!
 //! Note: Not all tokens are used yet - they are defined for the complete design system.
 
@@ -13,37 +14,73 @@
 use eframe::egui::{self, Color32, FontId, Rounding, Stroke, Style, Visuals};
 
 // =============================================================================
-// GRAY SCALE (Dark Theme)
+// GRAY SCALE (Linear-inspired Dark Theme)
 // =============================================================================
-// 21-stop gray scale from pure black to pure white
+// Deep blacks with subtle cool undertones, smooth gradient from black to white
 
 pub const GRAY_0: Color32 = Color32::from_rgb(0, 0, 0);
-pub const GRAY_100: Color32 = Color32::from_rgb(13, 16, 17);
-pub const GRAY_150: Color32 = Color32::from_rgb(20, 24, 25);
-pub const GRAY_200: Color32 = Color32::from_rgb(28, 33, 35);
-pub const GRAY_250: Color32 = Color32::from_rgb(38, 43, 46);
-pub const GRAY_300: Color32 = Color32::from_rgb(49, 56, 59);
-pub const GRAY_325: Color32 = Color32::from_rgb(55, 63, 66);
-pub const GRAY_400: Color32 = Color32::from_rgb(76, 86, 90);
-pub const GRAY_550: Color32 = Color32::from_rgb(125, 140, 146);
-pub const GRAY_700: Color32 = Color32::from_rgb(174, 194, 202);
-pub const GRAY_775: Color32 = Color32::from_rgb(202, 216, 222);
-pub const GRAY_800: Color32 = Color32::from_rgb(211, 222, 227);
+/// Deepest background - for drop shadows or true black needs
+pub const GRAY_50: Color32 = Color32::from_rgb(9, 9, 11);
+/// Main panel/window background
+pub const GRAY_100: Color32 = Color32::from_rgb(17, 17, 19);
+/// Sidebar/secondary panel background
+pub const GRAY_150: Color32 = Color32::from_rgb(23, 23, 26);
+/// Elevated surfaces, cards, inputs
+pub const GRAY_200: Color32 = Color32::from_rgb(31, 31, 35);
+/// Subtle borders (use sparingly)
+pub const GRAY_250: Color32 = Color32::from_rgb(39, 39, 43);
+/// Stronger borders, dividers
+pub const GRAY_300: Color32 = Color32::from_rgb(49, 49, 54);
+/// Hover backgrounds
+pub const GRAY_350: Color32 = Color32::from_rgb(55, 55, 61);
+/// Disabled/tertiary elements
+pub const GRAY_400: Color32 = Color32::from_rgb(75, 75, 82);
+/// Muted text, icons
+pub const GRAY_500: Color32 = Color32::from_rgb(107, 107, 115);
+/// Secondary text
+pub const GRAY_600: Color32 = Color32::from_rgb(139, 139, 148);
+/// Body text
+pub const GRAY_700: Color32 = Color32::from_rgb(171, 171, 181);
+/// Primary text
+pub const GRAY_800: Color32 = Color32::from_rgb(219, 219, 224);
+/// Bright/emphasized text
+pub const GRAY_900: Color32 = Color32::from_rgb(235, 235, 240);
+/// Pure white
 pub const GRAY_1000: Color32 = Color32::from_rgb(255, 255, 255);
 
+// Legacy aliases for compatibility
+pub const GRAY_325: Color32 = GRAY_350;
+pub const GRAY_550: Color32 = GRAY_500;
+pub const GRAY_775: Color32 = GRAY_800;
+
 // =============================================================================
-// ACCENT COLORS
+// ACCENT COLORS (Purple/Violet - Linear-inspired)
 // =============================================================================
 
-// Selection blue (primary accent)
-pub const BLUE_350: Color32 = Color32::from_rgb(24, 73, 187);
-pub const BLUE_400: Color32 = Color32::from_rgb(51, 102, 255);
-pub const BLUE_500: Color32 = Color32::from_rgb(68, 138, 255);
+/// Selection background (subtle violet tint)
+pub const VIOLET_900: Color32 = Color32::from_rgb(45, 38, 64);
+/// Darker pressed state
+pub const VIOLET_600: Color32 = Color32::from_rgb(124, 58, 237);
+/// Primary accent color
+pub const VIOLET_500: Color32 = Color32::from_rgb(139, 92, 246);
+/// Hover/lighter accent
+pub const VIOLET_400: Color32 = Color32::from_rgb(167, 139, 250);
 
-// Status colors
-pub const SUCCESS_GREEN: Color32 = Color32::from_rgb(0, 218, 126);
-pub const WARNING_ORANGE: Color32 = Color32::from_rgb(255, 122, 12);
-pub const ERROR_RED: Color32 = Color32::from_rgb(171, 1, 22);
+// Legacy blue aliases (map to violet for backwards compat)
+pub const BLUE_350: Color32 = VIOLET_900;
+pub const BLUE_400: Color32 = VIOLET_500;
+pub const BLUE_500: Color32 = VIOLET_400;
+
+// =============================================================================
+// STATUS COLORS
+// =============================================================================
+
+pub const SUCCESS_GREEN: Color32 = Color32::from_rgb(34, 197, 94);
+pub const WARNING_YELLOW: Color32 = Color32::from_rgb(234, 179, 8);
+pub const ERROR_RED: Color32 = Color32::from_rgb(239, 68, 68);
+
+// Legacy alias
+pub const WARNING_ORANGE: Color32 = WARNING_YELLOW;
 
 // =============================================================================
 // SEMANTIC COLORS - Panel & Background
@@ -54,26 +91,28 @@ pub const PANEL_BG: Color32 = GRAY_100;
 /// Top bar / title bar background
 pub const TOP_BAR_BG: Color32 = GRAY_100;
 /// Tab bar background
-pub const TAB_BAR_BG: Color32 = GRAY_200;
+pub const TAB_BAR_BG: Color32 = GRAY_150;
 /// Bottom bar / footer background
-pub const BOTTOM_BAR_BG: Color32 = GRAY_150;
+pub const BOTTOM_BAR_BG: Color32 = GRAY_100;
+/// Elevated surface (cards, dialogs, popups)
+pub const SURFACE_ELEVATED: Color32 = GRAY_200;
 /// Text edit / input field background
 pub const TEXT_EDIT_BG: Color32 = GRAY_200;
 /// Hover state background
-pub const HOVER_BG: Color32 = GRAY_325;
-/// Selection background
-pub const SELECTION_BG: Color32 = BLUE_350;
+pub const HOVER_BG: Color32 = GRAY_250;
+/// Selection background (subtle violet)
+pub const SELECTION_BG: Color32 = VIOLET_900;
 
 // =============================================================================
 // SEMANTIC COLORS - Text
 // =============================================================================
 
 /// Strong/active text (brightest)
-pub const TEXT_STRONG: Color32 = GRAY_1000;
+pub const TEXT_STRONG: Color32 = GRAY_900;
 /// Default body text
-pub const TEXT_DEFAULT: Color32 = GRAY_775;
+pub const TEXT_DEFAULT: Color32 = GRAY_700;
 /// Secondary/muted text
-pub const TEXT_SUBDUED: Color32 = GRAY_550;
+pub const TEXT_SUBDUED: Color32 = GRAY_500;
 /// Disabled/non-interactive text
 pub const TEXT_DISABLED: Color32 = GRAY_400;
 
@@ -82,17 +121,17 @@ pub const TEXT_DISABLED: Color32 = GRAY_400;
 // =============================================================================
 
 /// Widget inactive background
-pub const WIDGET_INACTIVE_BG: Color32 = GRAY_300;
+pub const WIDGET_INACTIVE_BG: Color32 = GRAY_250;
 /// Widget hovered background
-pub const WIDGET_HOVERED_BG: Color32 = GRAY_325;
+pub const WIDGET_HOVERED_BG: Color32 = GRAY_300;
 /// Widget active/pressed background
-pub const WIDGET_ACTIVE_BG: Color32 = GRAY_325;
+pub const WIDGET_ACTIVE_BG: Color32 = GRAY_350;
 /// Non-interactive widget background
 pub const WIDGET_NONINTERACTIVE_BG: Color32 = GRAY_150;
-/// Border color
+/// Border color (use sparingly - prefer no borders)
 pub const BORDER_COLOR: Color32 = GRAY_250;
 /// Secondary border color
-pub const BORDER_SECONDARY: Color32 = GRAY_400;
+pub const BORDER_SECONDARY: Color32 = GRAY_300;
 
 // =============================================================================
 // LAYOUT CONSTANTS - Heights
@@ -103,15 +142,15 @@ pub const TOP_BAR_HEIGHT: f32 = 28.0;
 /// Standard title bar height
 pub const TITLE_BAR_HEIGHT: f32 = 24.0;
 /// List item height
-pub const LIST_ITEM_HEIGHT: f32 = 24.0;
+pub const LIST_ITEM_HEIGHT: f32 = 28.0;
 /// Table header height
 pub const TABLE_HEADER_HEIGHT: f32 = 32.0;
 /// Standard row height
-pub const ROW_HEIGHT: f32 = 22.0;
+pub const ROW_HEIGHT: f32 = 24.0;
 
 // Legacy constants (for compatibility)
 pub const ADDRESS_BAR_HEIGHT: f32 = TOP_BAR_HEIGHT;
-pub const ANIMATION_BAR_HEIGHT: f32 = 27.0;
+pub const ANIMATION_BAR_HEIGHT: f32 = 28.0;
 pub const PANE_HEADER_HEIGHT: f32 = TITLE_BAR_HEIGHT;
 pub const LABEL_WIDTH: f32 = 100.0;
 
@@ -119,15 +158,15 @@ pub const LABEL_WIDTH: f32 = 100.0;
 // PANE HEADER COLORS
 // =============================================================================
 
-/// Pane header background color (consistent across all panes)
-pub const PANE_HEADER_BACKGROUND_COLOR: Color32 = GRAY_250;
-/// Pane header foreground/text color (higher contrast for readability)
-pub const PANE_HEADER_FOREGROUND_COLOR: Color32 = GRAY_700;
+/// Pane header background color (same as panel for seamless look)
+pub const PANE_HEADER_BACKGROUND_COLOR: Color32 = GRAY_150;
+/// Pane header foreground/text color
+pub const PANE_HEADER_FOREGROUND_COLOR: Color32 = GRAY_600;
 pub const PARAMETER_PANEL_WIDTH: f32 = 280.0;
 pub const PARAMETER_ROW_HEIGHT: f32 = ROW_HEIGHT;
 
 // =============================================================================
-// LAYOUT CONSTANTS - Spacing (8px grid)
+// LAYOUT CONSTANTS - Spacing (4px grid)
 // =============================================================================
 
 /// Standard padding
@@ -136,111 +175,113 @@ pub const PADDING: f32 = 8.0;
 pub const PADDING_SMALL: f32 = 4.0;
 /// Large padding
 pub const PADDING_LARGE: f32 = 12.0;
+/// Extra large padding
+pub const PADDING_XL: f32 = 16.0;
 /// View/panel padding
 pub const VIEW_PADDING: f32 = 12.0;
 /// Item spacing
 pub const ITEM_SPACING: f32 = 8.0;
 /// Menu item spacing
-pub const MENU_SPACING: f32 = 1.0;
+pub const MENU_SPACING: f32 = 4.0;
 /// Indent for hierarchical items
-pub const INDENT: f32 = 14.0;
+pub const INDENT: f32 = 16.0;
 /// Icon to text padding
-pub const ICON_TEXT_PADDING: f32 = 4.0;
+pub const ICON_TEXT_PADDING: f32 = 8.0;
 
 // =============================================================================
 // LAYOUT CONSTANTS - Sizing
 // =============================================================================
 
-/// Standard corner radius
-pub const CORNER_RADIUS: f32 = 6.0;
-/// Small corner radius (widgets)
+/// Standard corner radius (sharp/square for most UI)
+pub const CORNER_RADIUS: f32 = 0.0;
+/// Small corner radius (subtle rounding for selections, highlighted items)
 pub const CORNER_RADIUS_SMALL: f32 = 4.0;
 /// Large button size
-pub const BUTTON_SIZE_LARGE: f32 = 22.0;
+pub const BUTTON_SIZE_LARGE: f32 = 24.0;
 /// Button icon size
-pub const BUTTON_ICON_SIZE: f32 = 12.0;
+pub const BUTTON_ICON_SIZE: f32 = 16.0;
 /// Small icon size
-pub const ICON_SIZE_SMALL: f32 = 14.0;
+pub const ICON_SIZE_SMALL: f32 = 16.0;
 /// Scroll bar width
-pub const SCROLL_BAR_WIDTH: f32 = 6.0;
+pub const SCROLL_BAR_WIDTH: f32 = 8.0;
 
 // =============================================================================
 // TYPOGRAPHY
 // =============================================================================
 
-/// Base font size (12px is industry standard for dense UIs)
-pub const FONT_SIZE_BASE: f32 = 12.0;
+/// Base font size
+pub const FONT_SIZE_BASE: f32 = 13.0;
 /// Small font size
 pub const FONT_SIZE_SMALL: f32 = 11.0;
 /// Large/heading font size
 pub const FONT_SIZE_HEADING: f32 = 16.0;
 /// Line height ratio
-pub const LINE_HEIGHT_RATIO: f32 = 1.333;
+pub const LINE_HEIGHT_RATIO: f32 = 1.4;
 
 // =============================================================================
 // LEGACY CONSTANTS (for backward compatibility)
 // =============================================================================
 
-// Parameter panel value colors
-pub const VALUE_TEXT: Color32 = BLUE_500;
-pub const VALUE_TEXT_HOVER: Color32 = Color32::from_rgb(168, 200, 255);
+// Parameter panel value colors (now violet)
+pub const VALUE_TEXT: Color32 = VIOLET_400;
+pub const VALUE_TEXT_HOVER: Color32 = VIOLET_500;
 
 // Background colors
-pub const BACKGROUND_COLOR: Color32 = GRAY_200;
-pub const HEADER_BACKGROUND: Color32 = GRAY_250;
-pub const DARK_BACKGROUND: Color32 = GRAY_150;
+pub const BACKGROUND_COLOR: Color32 = GRAY_150;
+pub const HEADER_BACKGROUND: Color32 = GRAY_150;
+pub const DARK_BACKGROUND: Color32 = GRAY_100;
 
 // Text colors
 pub const TEXT_NORMAL: Color32 = TEXT_DEFAULT;
 pub const TEXT_BRIGHT: Color32 = TEXT_STRONG;
 
 // Port/parameter colors
-pub const PORT_LABEL_BACKGROUND: Color32 = GRAY_300;
-pub const PORT_VALUE_BACKGROUND: Color32 = GRAY_200;
+pub const PORT_LABEL_BACKGROUND: Color32 = GRAY_200;
+pub const PORT_VALUE_BACKGROUND: Color32 = GRAY_150;
 
 // Tab colors
-pub const SELECTED_TAB_BACKGROUND: Color32 = GRAY_150;
-pub const UNSELECTED_TAB_BACKGROUND: Color32 = GRAY_250;
+pub const SELECTED_TAB_BACKGROUND: Color32 = GRAY_200;
+pub const UNSELECTED_TAB_BACKGROUND: Color32 = GRAY_150;
 
 // Address bar colors
-pub const ADDRESS_BAR_BACKGROUND: Color32 = GRAY_200;
-pub const ADDRESS_SEGMENT_HOVER: Color32 = GRAY_325;
+pub const ADDRESS_BAR_BACKGROUND: Color32 = GRAY_150;
+pub const ADDRESS_SEGMENT_HOVER: Color32 = GRAY_250;
 pub const ADDRESS_SEPARATOR_COLOR: Color32 = GRAY_400;
 
 // Animation bar colors
-pub const ANIMATION_BAR_BACKGROUND: Color32 = GRAY_150;
+pub const ANIMATION_BAR_BACKGROUND: Color32 = GRAY_100;
 
 // Network view colors
-pub const NETWORK_BACKGROUND: Color32 = GRAY_200;
-pub const NETWORK_GRID: Color32 = GRAY_250;
+pub const NETWORK_BACKGROUND: Color32 = GRAY_100;
+pub const NETWORK_GRID: Color32 = GRAY_150;
 
 // Port type colors (semantic colors for data types)
-pub const PORT_COLOR_INT: Color32 = Color32::from_rgb(116, 119, 121);
-pub const PORT_COLOR_FLOAT: Color32 = Color32::from_rgb(116, 119, 121);
-pub const PORT_COLOR_STRING: Color32 = Color32::from_rgb(92, 90, 91);
-pub const PORT_COLOR_BOOLEAN: Color32 = Color32::from_rgb(92, 90, 91);
-pub const PORT_COLOR_POINT: Color32 = Color32::from_rgb(119, 154, 173);
-pub const PORT_COLOR_COLOR: Color32 = Color32::from_rgb(94, 85, 112);
-pub const PORT_COLOR_GEOMETRY: Color32 = Color32::from_rgb(20, 20, 20);
-pub const PORT_COLOR_LIST: Color32 = Color32::from_rgb(76, 137, 174);
-pub const PORT_COLOR_DATA: Color32 = Color32::from_rgb(52, 85, 129);
+pub const PORT_COLOR_INT: Color32 = Color32::from_rgb(99, 102, 241);    // Indigo
+pub const PORT_COLOR_FLOAT: Color32 = Color32::from_rgb(99, 102, 241);  // Indigo
+pub const PORT_COLOR_STRING: Color32 = Color32::from_rgb(34, 197, 94); // Green
+pub const PORT_COLOR_BOOLEAN: Color32 = Color32::from_rgb(234, 179, 8); // Yellow
+pub const PORT_COLOR_POINT: Color32 = Color32::from_rgb(56, 189, 248);  // Sky blue
+pub const PORT_COLOR_COLOR: Color32 = Color32::from_rgb(236, 72, 153);  // Pink
+pub const PORT_COLOR_GEOMETRY: Color32 = Color32::from_rgb(139, 92, 246); // Violet
+pub const PORT_COLOR_LIST: Color32 = Color32::from_rgb(20, 184, 166);   // Teal
+pub const PORT_COLOR_DATA: Color32 = Color32::from_rgb(249, 115, 22);   // Orange
 
 // Node selection dialog colors
-pub const DIALOG_BACKGROUND: Color32 = GRAY_200;
-pub const DIALOG_BORDER: Color32 = GRAY_100;
+pub const DIALOG_BACKGROUND: Color32 = GRAY_150;
+pub const DIALOG_BORDER: Color32 = GRAY_250;
 pub const SELECTED_ITEM: Color32 = SELECTION_BG;
-pub const HOVERED_ITEM: Color32 = GRAY_250;
+pub const HOVERED_ITEM: Color32 = GRAY_200;
 
 // Button colors
-pub const BUTTON_NORMAL: Color32 = WIDGET_INACTIVE_BG;
-pub const BUTTON_HOVER: Color32 = WIDGET_HOVERED_BG;
-pub const BUTTON_ACTIVE: Color32 = WIDGET_ACTIVE_BG;
+pub const BUTTON_NORMAL: Color32 = GRAY_250;
+pub const BUTTON_HOVER: Color32 = GRAY_300;
+pub const BUTTON_ACTIVE: Color32 = GRAY_350;
 
 // =============================================================================
 // STYLE CONFIGURATION
 // =============================================================================
 
-/// Configure egui's global style and visuals for NodeBox's dark theme.
+/// Configure egui's global style and visuals for NodeBox's Linear-inspired dark theme.
 pub fn configure_style(ctx: &egui::Context) {
     let mut style = Style::default();
     let mut visuals = Visuals::dark();
@@ -267,65 +308,65 @@ pub fn configure_style(ctx: &egui::Context) {
         FontId::monospace(FONT_SIZE_BASE),
     );
 
-    // Spacing
+    // Spacing - generous for a modern, breathable feel
     style.spacing.item_spacing = egui::vec2(ITEM_SPACING, ITEM_SPACING);
     style.spacing.button_padding = egui::vec2(PADDING_LARGE, PADDING);
     style.spacing.menu_margin = egui::Margin::same(MENU_SPACING);
     style.spacing.indent = INDENT;
     style.spacing.scroll = egui::style::ScrollStyle {
         bar_width: SCROLL_BAR_WIDTH,
-        bar_inner_margin: 2.0,
-        bar_outer_margin: 2.0,
+        bar_inner_margin: 4.0,
+        bar_outer_margin: 4.0,
         ..Default::default()
     };
 
-    // Visuals - Window (Figma-style: subtle borders)
-    visuals.window_fill = PANEL_BG;
-    visuals.window_stroke = Stroke::new(1.0, BORDER_COLOR);
-    visuals.window_rounding = Rounding::same(CORNER_RADIUS);
-    visuals.window_shadow = egui::Shadow::NONE; // Figma: no shadows on panels
+    // Visuals - Window (sharp corners, subtle border)
+    visuals.window_fill = SURFACE_ELEVATED;
+    visuals.window_stroke = Stroke::new(1.0, GRAY_250); // Very subtle border
+    visuals.window_rounding = Rounding::ZERO; // Sharp 90° corners
+    visuals.window_shadow = egui::Shadow::NONE;
 
-    // Visuals - Panel (clean, no extra borders)
+    // Visuals - Panel (no borders, use background differentiation)
     visuals.panel_fill = PANEL_BG;
     visuals.faint_bg_color = GRAY_150;
-    visuals.extreme_bg_color = GRAY_100;
+    visuals.extreme_bg_color = GRAY_50;
 
-    // Visuals - Widgets (subtle, Figma-like)
+    // Visuals - Widgets (sharp corners, minimal borders)
     visuals.widgets.noninteractive.bg_fill = WIDGET_NONINTERACTIVE_BG;
     visuals.widgets.noninteractive.fg_stroke = Stroke::new(1.0, TEXT_SUBDUED);
-    visuals.widgets.noninteractive.rounding = Rounding::same(CORNER_RADIUS_SMALL);
-    visuals.widgets.noninteractive.bg_stroke = Stroke::NONE; // Clean look
+    visuals.widgets.noninteractive.rounding = Rounding::ZERO;
+    visuals.widgets.noninteractive.bg_stroke = Stroke::NONE;
 
     visuals.widgets.inactive.bg_fill = WIDGET_INACTIVE_BG;
     visuals.widgets.inactive.fg_stroke = Stroke::new(1.0, TEXT_DEFAULT);
-    visuals.widgets.inactive.rounding = Rounding::same(CORNER_RADIUS_SMALL);
-    visuals.widgets.inactive.bg_stroke = Stroke::NONE; // Clean look
+    visuals.widgets.inactive.rounding = Rounding::ZERO;
+    visuals.widgets.inactive.bg_stroke = Stroke::NONE;
 
     visuals.widgets.hovered.bg_fill = WIDGET_HOVERED_BG;
     visuals.widgets.hovered.fg_stroke = Stroke::new(1.0, TEXT_STRONG);
-    visuals.widgets.hovered.rounding = Rounding::same(CORNER_RADIUS_SMALL);
-    visuals.widgets.hovered.expansion = 1.0; // Subtle hover expansion (Figma-like)
+    visuals.widgets.hovered.rounding = Rounding::ZERO;
+    visuals.widgets.hovered.expansion = 0.0; // No expansion, just color change
     visuals.widgets.hovered.bg_stroke = Stroke::NONE;
 
     visuals.widgets.active.bg_fill = WIDGET_ACTIVE_BG;
     visuals.widgets.active.fg_stroke = Stroke::new(1.0, TEXT_STRONG);
-    visuals.widgets.active.rounding = Rounding::same(CORNER_RADIUS_SMALL);
-    visuals.widgets.active.expansion = 1.0;
+    visuals.widgets.active.rounding = Rounding::ZERO;
+    visuals.widgets.active.expansion = 0.0;
     visuals.widgets.active.bg_stroke = Stroke::NONE;
 
     visuals.widgets.open.bg_fill = WIDGET_ACTIVE_BG;
     visuals.widgets.open.fg_stroke = Stroke::new(1.0, TEXT_STRONG);
-    visuals.widgets.open.rounding = Rounding::same(CORNER_RADIUS_SMALL);
+    visuals.widgets.open.rounding = Rounding::ZERO;
 
-    // Selection (Figma-style: clean selection highlight)
+    // Selection (violet tint, no stroke for cleaner look)
     visuals.selection.bg_fill = SELECTION_BG;
-    visuals.selection.stroke = Stroke::new(1.0, BLUE_400); // Thinner selection stroke
+    visuals.selection.stroke = Stroke::NONE;
 
-    // Separators - very subtle
-    visuals.widgets.noninteractive.bg_stroke = Stroke::new(1.0, GRAY_200);
+    // Separators - almost invisible
+    visuals.widgets.noninteractive.bg_stroke = Stroke::NONE;
 
-    // Hyperlinks
-    visuals.hyperlink_color = BLUE_500;
+    // Hyperlinks (violet accent)
+    visuals.hyperlink_color = VIOLET_400;
 
     // Apply styles
     style.visuals = visuals;
