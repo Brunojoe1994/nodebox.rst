@@ -802,19 +802,9 @@ impl NetworkView {
         }
     }
 
-    /// Get a color for a node's output type (colors the entire node body).
-    fn output_type_color(&self, output_type: &PortType) -> Color32 {
-        match output_type {
-            PortType::Int => theme::PORT_COLOR_INT,
-            PortType::Float => theme::PORT_COLOR_FLOAT,
-            PortType::String => theme::PORT_COLOR_STRING,
-            PortType::Boolean => theme::PORT_COLOR_BOOLEAN,
-            PortType::Point => theme::PORT_COLOR_POINT,
-            PortType::Color => theme::PORT_COLOR_COLOR,
-            PortType::Geometry => theme::PORT_COLOR_GEOMETRY,
-            PortType::List => theme::PORT_COLOR_LIST,
-            _ => theme::PORT_COLOR_DATA,
-        }
+    /// Get a color for a node's body (consistent slate color for all nodes).
+    fn output_type_color(&self, _output_type: &PortType) -> Color32 {
+        theme::NODE_BODY_COLOR
     }
 }
 

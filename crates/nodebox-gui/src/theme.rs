@@ -1,11 +1,11 @@
-//! Centralized theme constants inspired by Linear's refined dark design.
+//! Centralized theme constants based on Tailwind's Slate color palette.
 //!
 //! Design principles:
-//! - Deep, rich dark backgrounds with subtle cool undertones
+//! - Cool blue-gray tones from Tailwind's Slate palette
 //! - Purple/violet accent color for selections and highlights
-//! - Rounded corners (8px large, 4px small) for a softer feel
+//! - Sharp corners (0px) for a modern, precise feel
 //! - Minimal borders - use background color differentiation instead
-//! - Generous spacing for a breathable, modern look
+//! - Good contrast for readability
 //!
 //! Note: Not all tokens are used yet - they are defined for the complete design system.
 
@@ -14,44 +14,56 @@
 use eframe::egui::{self, Color32, FontId, Rounding, Stroke, Style, Visuals};
 
 // =============================================================================
-// GRAY SCALE (Linear-inspired Dark Theme)
+// SLATE SCALE (Tailwind v4 Slate Palette)
 // =============================================================================
-// Deep blacks with subtle cool undertones, smooth gradient from black to white
+// Cool blue-gray tones with good contrast
+
+/// Lightest - near white with cool tint
+pub const SLATE_50: Color32 = Color32::from_rgb(248, 250, 252);
+/// Very light
+pub const SLATE_100: Color32 = Color32::from_rgb(241, 245, 249);
+/// Light
+pub const SLATE_200: Color32 = Color32::from_rgb(226, 232, 240);
+/// Light-medium
+pub const SLATE_300: Color32 = Color32::from_rgb(202, 213, 226);
+/// Medium - good for muted text
+pub const SLATE_400: Color32 = Color32::from_rgb(144, 161, 185);
+/// Medium-dark - node fills, secondary elements
+pub const SLATE_500: Color32 = Color32::from_rgb(98, 116, 142);
+/// Dark - node fills, interactive elements
+pub const SLATE_600: Color32 = Color32::from_rgb(69, 85, 108);
+/// Darker - elevated surfaces
+pub const SLATE_700: Color32 = Color32::from_rgb(49, 65, 88);
+/// Very dark - panel backgrounds
+pub const SLATE_800: Color32 = Color32::from_rgb(29, 41, 61);
+/// Near black - main backgrounds
+pub const SLATE_900: Color32 = Color32::from_rgb(15, 23, 43);
+/// Deepest - true dark background
+pub const SLATE_950: Color32 = Color32::from_rgb(2, 6, 24);
+
+// =============================================================================
+// LEGACY GRAY ALIASES (map to Slate for backward compatibility)
+// =============================================================================
 
 pub const GRAY_0: Color32 = Color32::from_rgb(0, 0, 0);
-/// Deepest background - for drop shadows or true black needs
-pub const GRAY_50: Color32 = Color32::from_rgb(9, 9, 11);
-/// Main panel/window background
-pub const GRAY_100: Color32 = Color32::from_rgb(17, 17, 19);
-/// Sidebar/secondary panel background
-pub const GRAY_150: Color32 = Color32::from_rgb(23, 23, 26);
-/// Elevated surfaces, cards, inputs
-pub const GRAY_200: Color32 = Color32::from_rgb(31, 31, 35);
-/// Subtle borders (use sparingly)
-pub const GRAY_250: Color32 = Color32::from_rgb(39, 39, 43);
-/// Stronger borders, dividers
-pub const GRAY_300: Color32 = Color32::from_rgb(49, 49, 54);
-/// Hover backgrounds
-pub const GRAY_350: Color32 = Color32::from_rgb(55, 55, 61);
-/// Disabled/tertiary elements
-pub const GRAY_400: Color32 = Color32::from_rgb(75, 75, 82);
-/// Muted text, icons
-pub const GRAY_500: Color32 = Color32::from_rgb(107, 107, 115);
-/// Secondary text
-pub const GRAY_600: Color32 = Color32::from_rgb(139, 139, 148);
-/// Body text
-pub const GRAY_700: Color32 = Color32::from_rgb(171, 171, 181);
-/// Primary text
-pub const GRAY_800: Color32 = Color32::from_rgb(219, 219, 224);
-/// Bright/emphasized text
-pub const GRAY_900: Color32 = Color32::from_rgb(235, 235, 240);
-/// Pure white
+pub const GRAY_50: Color32 = SLATE_950;
+pub const GRAY_100: Color32 = SLATE_900;
+pub const GRAY_150: Color32 = SLATE_800;
+pub const GRAY_200: Color32 = SLATE_700;
+pub const GRAY_250: Color32 = SLATE_600;
+pub const GRAY_300: Color32 = SLATE_600;
+pub const GRAY_350: Color32 = SLATE_500;
+pub const GRAY_400: Color32 = SLATE_500;
+pub const GRAY_500: Color32 = SLATE_400;
+pub const GRAY_600: Color32 = SLATE_300;
+pub const GRAY_700: Color32 = SLATE_200;
+pub const GRAY_800: Color32 = SLATE_100;
+pub const GRAY_900: Color32 = SLATE_50;
 pub const GRAY_1000: Color32 = Color32::from_rgb(255, 255, 255);
 
-// Legacy aliases for compatibility
-pub const GRAY_325: Color32 = GRAY_350;
-pub const GRAY_550: Color32 = GRAY_500;
-pub const GRAY_775: Color32 = GRAY_800;
+pub const GRAY_325: Color32 = SLATE_500;
+pub const GRAY_550: Color32 = SLATE_400;
+pub const GRAY_775: Color32 = SLATE_100;
 
 // =============================================================================
 // ACCENT COLORS (Purple/Violet - Linear-inspired)
@@ -87,19 +99,19 @@ pub const WARNING_ORANGE: Color32 = WARNING_YELLOW;
 // =============================================================================
 
 /// Main panel background (dark)
-pub const PANEL_BG: Color32 = GRAY_100;
+pub const PANEL_BG: Color32 = SLATE_900;
 /// Top bar / title bar background
-pub const TOP_BAR_BG: Color32 = GRAY_100;
+pub const TOP_BAR_BG: Color32 = SLATE_900;
 /// Tab bar background
-pub const TAB_BAR_BG: Color32 = GRAY_150;
+pub const TAB_BAR_BG: Color32 = SLATE_800;
 /// Bottom bar / footer background
-pub const BOTTOM_BAR_BG: Color32 = GRAY_100;
+pub const BOTTOM_BAR_BG: Color32 = SLATE_900;
 /// Elevated surface (cards, dialogs, popups)
-pub const SURFACE_ELEVATED: Color32 = GRAY_200;
+pub const SURFACE_ELEVATED: Color32 = SLATE_700;
 /// Text edit / input field background
-pub const TEXT_EDIT_BG: Color32 = GRAY_200;
+pub const TEXT_EDIT_BG: Color32 = SLATE_700;
 /// Hover state background
-pub const HOVER_BG: Color32 = GRAY_250;
+pub const HOVER_BG: Color32 = SLATE_600;
 /// Selection background (subtle violet)
 pub const SELECTION_BG: Color32 = VIOLET_900;
 
@@ -108,30 +120,30 @@ pub const SELECTION_BG: Color32 = VIOLET_900;
 // =============================================================================
 
 /// Strong/active text (brightest)
-pub const TEXT_STRONG: Color32 = GRAY_900;
+pub const TEXT_STRONG: Color32 = SLATE_50;
 /// Default body text
-pub const TEXT_DEFAULT: Color32 = GRAY_700;
+pub const TEXT_DEFAULT: Color32 = SLATE_200;
 /// Secondary/muted text
-pub const TEXT_SUBDUED: Color32 = GRAY_500;
+pub const TEXT_SUBDUED: Color32 = SLATE_400;
 /// Disabled/non-interactive text
-pub const TEXT_DISABLED: Color32 = GRAY_400;
+pub const TEXT_DISABLED: Color32 = SLATE_500;
 
 // =============================================================================
 // SEMANTIC COLORS - Widgets & Borders
 // =============================================================================
 
 /// Widget inactive background
-pub const WIDGET_INACTIVE_BG: Color32 = GRAY_250;
+pub const WIDGET_INACTIVE_BG: Color32 = SLATE_600;
 /// Widget hovered background
-pub const WIDGET_HOVERED_BG: Color32 = GRAY_300;
+pub const WIDGET_HOVERED_BG: Color32 = SLATE_500;
 /// Widget active/pressed background
-pub const WIDGET_ACTIVE_BG: Color32 = GRAY_350;
+pub const WIDGET_ACTIVE_BG: Color32 = SLATE_400;
 /// Non-interactive widget background
-pub const WIDGET_NONINTERACTIVE_BG: Color32 = GRAY_150;
+pub const WIDGET_NONINTERACTIVE_BG: Color32 = SLATE_800;
 /// Border color (use sparingly - prefer no borders)
-pub const BORDER_COLOR: Color32 = GRAY_250;
+pub const BORDER_COLOR: Color32 = SLATE_600;
 /// Secondary border color
-pub const BORDER_SECONDARY: Color32 = GRAY_300;
+pub const BORDER_SECONDARY: Color32 = SLATE_500;
 
 // =============================================================================
 // LAYOUT CONSTANTS - Heights
@@ -159,9 +171,9 @@ pub const LABEL_WIDTH: f32 = 100.0;
 // =============================================================================
 
 /// Pane header background color (same as panel for seamless look)
-pub const PANE_HEADER_BACKGROUND_COLOR: Color32 = GRAY_150;
+pub const PANE_HEADER_BACKGROUND_COLOR: Color32 = SLATE_800;
 /// Pane header foreground/text color
-pub const PANE_HEADER_FOREGROUND_COLOR: Color32 = GRAY_600;
+pub const PANE_HEADER_FOREGROUND_COLOR: Color32 = SLATE_300;
 pub const PARAMETER_PANEL_WIDTH: f32 = 280.0;
 pub const PARAMETER_ROW_HEIGHT: f32 = ROW_HEIGHT;
 
@@ -227,33 +239,34 @@ pub const VALUE_TEXT: Color32 = VIOLET_400;
 pub const VALUE_TEXT_HOVER: Color32 = VIOLET_500;
 
 // Background colors
-pub const BACKGROUND_COLOR: Color32 = GRAY_150;
-pub const HEADER_BACKGROUND: Color32 = GRAY_150;
-pub const DARK_BACKGROUND: Color32 = GRAY_100;
+pub const BACKGROUND_COLOR: Color32 = SLATE_800;
+pub const HEADER_BACKGROUND: Color32 = SLATE_800;
+pub const DARK_BACKGROUND: Color32 = SLATE_900;
 
 // Text colors
 pub const TEXT_NORMAL: Color32 = TEXT_DEFAULT;
 pub const TEXT_BRIGHT: Color32 = TEXT_STRONG;
 
 // Port/parameter colors
-pub const PORT_LABEL_BACKGROUND: Color32 = GRAY_200;
-pub const PORT_VALUE_BACKGROUND: Color32 = GRAY_150;
+pub const PORT_LABEL_BACKGROUND: Color32 = SLATE_700;
+pub const PORT_VALUE_BACKGROUND: Color32 = SLATE_800;
 
 // Tab colors
-pub const SELECTED_TAB_BACKGROUND: Color32 = GRAY_200;
-pub const UNSELECTED_TAB_BACKGROUND: Color32 = GRAY_150;
+pub const SELECTED_TAB_BACKGROUND: Color32 = SLATE_700;
+pub const UNSELECTED_TAB_BACKGROUND: Color32 = SLATE_800;
 
 // Address bar colors
-pub const ADDRESS_BAR_BACKGROUND: Color32 = GRAY_150;
-pub const ADDRESS_SEGMENT_HOVER: Color32 = GRAY_250;
-pub const ADDRESS_SEPARATOR_COLOR: Color32 = GRAY_400;
+pub const ADDRESS_BAR_BACKGROUND: Color32 = SLATE_800;
+pub const ADDRESS_SEGMENT_HOVER: Color32 = SLATE_600;
+pub const ADDRESS_SEPARATOR_COLOR: Color32 = SLATE_500;
 
 // Animation bar colors
-pub const ANIMATION_BAR_BACKGROUND: Color32 = GRAY_100;
+pub const ANIMATION_BAR_BACKGROUND: Color32 = SLATE_900;
 
 // Network view colors
-pub const NETWORK_BACKGROUND: Color32 = GRAY_100;
-pub const NETWORK_GRID: Color32 = GRAY_150;
+pub const NETWORK_BACKGROUND: Color32 = SLATE_900;
+/// Grid lines - use slate-700 for visible contrast against slate-900 background
+pub const NETWORK_GRID: Color32 = SLATE_700;
 
 // Network View - Tooltips
 pub const TOOLTIP_BG: Color32 = SURFACE_ELEVATED;
@@ -263,6 +276,9 @@ pub const TOOLTIP_TEXT: Color32 = TEXT_STRONG;
 pub const CONNECTION_HOVER: Color32 = ERROR_RED; // Red indicates deletable
 pub const PORT_HOVER: Color32 = VIOLET_400; // Accent for interactive
 
+// Node body fill color - slate-600 for good visibility
+pub const NODE_BODY_COLOR: Color32 = SLATE_600;
+
 // Node Category Colors (for node icons/identity)
 pub const CATEGORY_GEOMETRY: Color32 = Color32::from_rgb(80, 120, 200);
 pub const CATEGORY_TRANSFORM: Color32 = Color32::from_rgb(200, 120, 80);
@@ -271,16 +287,16 @@ pub const CATEGORY_MATH: Color32 = Color32::from_rgb(120, 200, 80);
 pub const CATEGORY_LIST: Color32 = Color32::from_rgb(200, 200, 80);
 pub const CATEGORY_STRING: Color32 = Color32::from_rgb(180, 80, 200);
 pub const CATEGORY_DATA: Color32 = Color32::from_rgb(80, 200, 200);
-pub const CATEGORY_DEFAULT: Color32 = GRAY_400;
+pub const CATEGORY_DEFAULT: Color32 = SLATE_500;
 
 // Handle Colors (violet-based to match accent)
 pub const HANDLE_PRIMARY: Color32 = VIOLET_500;
 
 // Canvas/Viewer grid (uses alpha, so defined as function)
 pub fn viewer_grid() -> Color32 {
-    Color32::from_rgba_unmultiplied(200, 200, 200, 30)
+    Color32::from_rgba_unmultiplied(144, 161, 185, 40) // slate-400 with alpha
 }
-pub const VIEWER_CROSSHAIR: Color32 = GRAY_500;
+pub const VIEWER_CROSSHAIR: Color32 = SLATE_400;
 
 // Point Type Visualization
 pub const POINT_LINE_TO: Color32 = Color32::from_rgb(100, 200, 100);
@@ -288,8 +304,8 @@ pub const POINT_CURVE_TO: Color32 = Color32::from_rgb(200, 100, 100);
 pub const POINT_CURVE_DATA: Color32 = Color32::from_rgb(100, 100, 200);
 
 // Timeline
-pub const TIMELINE_BG: Color32 = GRAY_150;
-pub const TIMELINE_MARKER: Color32 = GRAY_300;
+pub const TIMELINE_BG: Color32 = SLATE_800;
+pub const TIMELINE_MARKER: Color32 = SLATE_600;
 pub const TIMELINE_PLAYHEAD: Color32 = ERROR_RED;
 
 // Port type colors (semantic colors for data types)
@@ -304,15 +320,15 @@ pub const PORT_COLOR_LIST: Color32 = Color32::from_rgb(20, 184, 166);   // Teal
 pub const PORT_COLOR_DATA: Color32 = Color32::from_rgb(249, 115, 22);   // Orange
 
 // Node selection dialog colors
-pub const DIALOG_BACKGROUND: Color32 = GRAY_150;
-pub const DIALOG_BORDER: Color32 = GRAY_250;
+pub const DIALOG_BACKGROUND: Color32 = SLATE_800;
+pub const DIALOG_BORDER: Color32 = SLATE_600;
 pub const SELECTED_ITEM: Color32 = SELECTION_BG;
-pub const HOVERED_ITEM: Color32 = GRAY_200;
+pub const HOVERED_ITEM: Color32 = SLATE_700;
 
 // Button colors
-pub const BUTTON_NORMAL: Color32 = GRAY_250;
-pub const BUTTON_HOVER: Color32 = GRAY_300;
-pub const BUTTON_ACTIVE: Color32 = GRAY_350;
+pub const BUTTON_NORMAL: Color32 = SLATE_600;
+pub const BUTTON_HOVER: Color32 = SLATE_500;
+pub const BUTTON_ACTIVE: Color32 = SLATE_400;
 
 // =============================================================================
 // STYLE CONFIGURATION
@@ -359,14 +375,14 @@ pub fn configure_style(ctx: &egui::Context) {
 
     // Visuals - Window (sharp corners, subtle border)
     visuals.window_fill = SURFACE_ELEVATED;
-    visuals.window_stroke = Stroke::new(1.0, GRAY_250); // Very subtle border
+    visuals.window_stroke = Stroke::new(1.0, SLATE_600); // Very subtle border
     visuals.window_rounding = Rounding::ZERO; // Sharp 90° corners
     visuals.window_shadow = egui::Shadow::NONE;
 
     // Visuals - Panel (no borders, use background differentiation)
     visuals.panel_fill = PANEL_BG;
-    visuals.faint_bg_color = GRAY_150;
-    visuals.extreme_bg_color = GRAY_50;
+    visuals.faint_bg_color = SLATE_800;
+    visuals.extreme_bg_color = SLATE_950;
 
     // Visuals - Widgets (sharp corners, minimal borders)
     visuals.widgets.noninteractive.bg_fill = WIDGET_NONINTERACTIVE_BG;
