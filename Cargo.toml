@@ -1,3 +1,18 @@
+[package]
+name = "nodebox"
+version.workspace = true
+edition.workspace = true
+
+default-run = "nodebox"
+
+[[bin]]
+name = "nodebox"
+path = "src/main.rs"
+
+[dependencies]
+nodebox-gui = { path = "crates/nodebox-gui" }
+eframe = "0.30"
+
 [workspace]
 resolver = "2"
 members = [
@@ -14,6 +29,7 @@ members = [
 # To build nodebox-python, install Python dev headers and run:
 #   cargo build -p nodebox-python
 default-members = [
+    ".",
     "crates/nodebox-core",
     "crates/nodebox-ndbx",
     "crates/nodebox-ops",
