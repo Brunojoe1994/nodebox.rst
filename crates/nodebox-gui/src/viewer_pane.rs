@@ -214,9 +214,6 @@ pub struct ViewerPane {
     /// Whether to use GPU rendering (can be toggled at runtime).
     #[cfg(feature = "gpu-rendering")]
     pub use_gpu_rendering: bool,
-    /// Previous geometry hash for cache invalidation.
-    #[cfg(feature = "gpu-rendering")]
-    prev_geometry_hash: u64,
 }
 
 impl Default for ViewerPane {
@@ -246,8 +243,6 @@ impl ViewerPane {
             vello_viewer: VelloViewer::new(),
             #[cfg(feature = "gpu-rendering")]
             use_gpu_rendering: true, // Default to GPU rendering when available
-            #[cfg(feature = "gpu-rendering")]
-            prev_geometry_hash: 0,
         }
     }
 
@@ -297,14 +292,29 @@ impl ViewerPane {
             for contour in &path.contours {
                 contour.points.len().hash(&mut hasher);
                 contour.closed.hash(&mut hasher);
+                // Hash actual point coordinates (critical for cache invalidation!)
+                for point in &contour.points {
+                    point.point.x.to_bits().hash(&mut hasher);
+                    point.point.y.to_bits().hash(&mut hasher);
+                    std::mem::discriminant(&point.point_type).hash(&mut hasher);
+                }
             }
-            // Hash colors (converting to integer representation)
+            // Hash fill color
             if let Some(fill) = path.fill {
-                ((fill.r * 255.0) as u32).hash(&mut hasher);
-                ((fill.g * 255.0) as u32).hash(&mut hasher);
-                ((fill.b * 255.0) as u32).hash(&mut hasher);
-                ((fill.a * 255.0) as u32).hash(&mut hasher);
+                fill.r.to_bits().hash(&mut hasher);
+                fill.g.to_bits().hash(&mut hasher);
+                fill.b.to_bits().hash(&mut hasher);
+                fill.a.to_bits().hash(&mut hasher);
             }
+            // Hash stroke color
+            if let Some(stroke) = path.stroke {
+                stroke.r.to_bits().hash(&mut hasher);
+                stroke.g.to_bits().hash(&mut hasher);
+                stroke.b.to_bits().hash(&mut hasher);
+                stroke.a.to_bits().hash(&mut hasher);
+            }
+            // Hash stroke width
+            path.stroke_width.to_bits().hash(&mut hasher);
         }
         hasher.finish()
     }
@@ -485,24 +495,22 @@ impl ViewerPane {
         #[cfg(feature = "gpu-rendering")]
         {
             if self.use_gpu_rendering && self.vello_viewer.is_available() {
-                // Check if geometry changed
+                // Compute geometry hash for cache invalidation
                 let geometry_hash = Self::hash_geometry(&state.geometry);
-                if geometry_hash != self.prev_geometry_hash {
-                    self.vello_viewer.invalidate();
-                    self.prev_geometry_hash = geometry_hash;
-                }
 
-                // Also invalidate on pan/zoom changes
+                // Set background color (Vello will render the background)
                 self.vello_viewer.set_background_color(state.background_color);
 
-                // Build transform from pan/zoom state
-                let transform = vello::kurbo::Affine::translate((
-                    (center.x + self.pan_zoom.pan.x) as f64,
-                    (center.y + self.pan_zoom.pan.y) as f64,
-                )) * vello::kurbo::Affine::scale(self.pan_zoom.zoom as f64);
-
-                // Render with Vello
-                self.vello_viewer.show(ui, &state.geometry, transform, rect);
+                // Render with Vello - pass pan, zoom, and geometry hash
+                // The VelloViewer handles transform calculation and cache invalidation internally
+                self.vello_viewer.render(
+                    ui,
+                    &state.geometry,
+                    self.pan_zoom.pan,
+                    self.pan_zoom.zoom,
+                    rect,
+                    geometry_hash,
+                );
 
                 // Draw points overlay if enabled (still use egui for this)
                 if self.show_points {
