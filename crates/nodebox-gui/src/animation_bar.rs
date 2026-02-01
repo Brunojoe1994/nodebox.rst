@@ -322,12 +322,17 @@ impl AnimationBar {
         ui.visuals_mut().widgets.noninteractive.bg_stroke = egui::Stroke::NONE;
         ui.visuals_mut().widgets.noninteractive.rounding = egui::Rounding::ZERO;
 
-        let response = ui.add_sized(
-            [width, theme::ANIMATION_BAR_HEIGHT],
-            egui::DragValue::new(value)
-                .range(range)
-                .speed(1.0),
-        );
+        // Use a fixed-size scope to prevent expansion during text editing
+        let response = ui.scope(|ui| {
+            ui.set_width(width);
+            ui.set_height(theme::ANIMATION_BAR_HEIGHT);
+            ui.add(
+                egui::DragValue::new(value)
+                    .range(range)
+                    .speed(1.0)
+                    .update_while_editing(false),
+            )
+        }).inner;
 
         // Restore visuals
         *ui.visuals_mut() = old_visuals;
