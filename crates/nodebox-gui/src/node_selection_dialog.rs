@@ -274,21 +274,48 @@ impl NodeSelectionDialog {
             }
         });
 
-        // Modal window
-        egui::Window::new("New Node")
+        // Modal window - clean Figma-like styling
+        let dialog_frame = egui::Frame::none()
+            .fill(theme::PANEL_BG)
+            .stroke(egui::Stroke::new(1.0, theme::BORDER_COLOR))
+            .rounding(egui::Rounding::same(theme::CORNER_RADIUS))
+            .inner_margin(egui::Margin::same(0.0));
+
+        egui::Window::new("Add Node")
             .collapsible(false)
             .resizable(false)
-            .fixed_size([400.0, 350.0])
+            .title_bar(false) // Custom title bar
+            .fixed_size([360.0, 340.0])
             .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
+            .frame(dialog_frame)
             .show(ctx, |ui| {
-                // Search input
+                // Custom header
                 ui.horizontal(|ui| {
-                    ui.label("Search:");
+                    ui.add_space(theme::PADDING_LARGE);
+                    ui.label(
+                        egui::RichText::new("Add Node")
+                            .color(theme::TEXT_DEFAULT)
+                            .size(12.0),
+                    );
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        ui.add_space(theme::PADDING);
+                        if ui.small_button("×").clicked() {
+                            should_close = true;
+                        }
+                    });
+                });
+
+                ui.add_space(theme::PADDING_SMALL);
+
+                // Search input - full width, clean styling
+                ui.horizontal(|ui| {
+                    ui.add_space(theme::PADDING_LARGE);
                     let response = ui.add(
                         egui::TextEdit::singleline(&mut self.search_query)
-                            .desired_width(300.0)
-                            .hint_text("Type to search..."),
+                            .desired_width(ui.available_width() - theme::PADDING_LARGE * 2.0)
+                            .hint_text("Search nodes..."),
                     );
+                    ui.add_space(theme::PADDING_LARGE);
 
                     // Focus search on open
                     if self.focus_search {
@@ -311,10 +338,11 @@ impl NodeSelectionDialog {
                     }
                 });
 
-                ui.add_space(8.0);
+                ui.add_space(theme::PADDING);
 
-                // Category buttons
+                // Category filters - subtle pill buttons
                 ui.horizontal(|ui| {
+                    ui.add_space(theme::PADDING_LARGE);
                     for &cat in CATEGORIES {
                         let is_selected = if cat == "All" {
                             self.selected_category.is_none()
@@ -322,7 +350,19 @@ impl NodeSelectionDialog {
                             self.selected_category.as_deref() == Some(cat)
                         };
 
-                        if ui.selectable_label(is_selected, cat).clicked() {
+                        let text_color = if is_selected {
+                            theme::TEXT_STRONG
+                        } else {
+                            theme::TEXT_SUBDUED
+                        };
+
+                        let response = ui.add(
+                            egui::Label::new(
+                                egui::RichText::new(cat).color(text_color).size(10.0),
+                            ).sense(egui::Sense::click())
+                        );
+
+                        if response.clicked() {
                             if cat == "All" {
                                 self.selected_category = None;
                             } else {
@@ -330,14 +370,27 @@ impl NodeSelectionDialog {
                             }
                             self.update_filtered_list();
                         }
+
+                        ui.add_space(theme::PADDING);
                     }
                 });
 
-                ui.separator();
+                ui.add_space(theme::PADDING_SMALL);
 
-                // Node list
+                // Subtle separator
+                let sep_rect = ui.available_rect_before_wrap();
+                ui.painter().line_segment(
+                    [
+                        egui::pos2(sep_rect.min.x, sep_rect.min.y),
+                        egui::pos2(sep_rect.max.x, sep_rect.min.y),
+                    ],
+                    egui::Stroke::new(1.0, theme::BORDER_COLOR),
+                );
+                ui.add_space(1.0);
+
+                // Node list - clean, minimal styling
                 egui::ScrollArea::vertical()
-                    .max_height(250.0)
+                    .max_height(220.0)
                     .show(ui, |ui| {
                         for (list_idx, &template_idx) in self.filtered_indices.iter().enumerate() {
                             let template = &NODE_TEMPLATES[template_idx];
@@ -345,25 +398,29 @@ impl NodeSelectionDialog {
 
                             // Create a frame for the item
                             let response = ui.allocate_response(
-                                Vec2::new(ui.available_width(), 32.0),
+                                Vec2::new(ui.available_width(), 28.0),
                                 egui::Sense::click(),
                             );
 
-                            // Background
+                            // Background - subtle
                             let bg_color = if is_selected {
-                                theme::SELECTED_ITEM
+                                theme::SELECTION_BG
                             } else if response.hovered() {
-                                theme::HOVERED_ITEM
+                                theme::HOVER_BG
                             } else {
                                 Color32::TRANSPARENT
                             };
 
                             if bg_color != Color32::TRANSPARENT {
-                                ui.painter().rect_filled(response.rect, 2.0, bg_color);
+                                ui.painter().rect_filled(
+                                    response.rect.shrink2(Vec2::new(theme::PADDING, 0.0)),
+                                    theme::CORNER_RADIUS_SMALL,
+                                    bg_color,
+                                );
                             }
 
                             // Icon (loaded from libraries or fallback)
-                            let icon_pos = response.rect.min + Vec2::new(8.0, 6.0);
+                            let icon_pos = response.rect.min + Vec2::new(theme::PADDING_LARGE, 4.0);
                             let function = format!("corevector/{}", template.name);
                             icon_cache.draw_icon(
                                 ctx,
@@ -376,17 +433,17 @@ impl NodeSelectionDialog {
 
                             // Name
                             ui.painter().text(
-                                response.rect.min + Vec2::new(36.0, 8.0),
+                                response.rect.min + Vec2::new(theme::PADDING_LARGE + 24.0, 7.0),
                                 egui::Align2::LEFT_TOP,
                                 template.name,
-                                egui::FontId::proportional(12.0),
-                                theme::TEXT_BRIGHT,
+                                egui::FontId::proportional(11.0),
+                                if is_selected { theme::TEXT_STRONG } else { theme::TEXT_DEFAULT },
                             );
 
-                            // Description
+                            // Description - on the right, smaller
                             ui.painter().text(
-                                response.rect.min + Vec2::new(36.0, 22.0),
-                                egui::Align2::LEFT_TOP,
+                                egui::pos2(response.rect.max.x - theme::PADDING_LARGE, response.rect.min.y + 7.0),
+                                egui::Align2::RIGHT_TOP,
                                 template.description,
                                 egui::FontId::proportional(10.0),
                                 theme::TEXT_DISABLED,
@@ -408,28 +465,13 @@ impl NodeSelectionDialog {
                             ui.vertical_centered(|ui| {
                                 ui.add_space(50.0);
                                 ui.label(
-                                    egui::RichText::new("No matching nodes found.")
-                                        .color(theme::TEXT_DISABLED),
+                                    egui::RichText::new("No matching nodes")
+                                        .color(theme::TEXT_DISABLED)
+                                        .size(11.0),
                                 );
                             });
                         }
                     });
-
-                ui.separator();
-
-                // Buttons
-                ui.horizontal(|ui| {
-                    if ui.button("Create").clicked() {
-                        if let Some(&idx) = self.filtered_indices.get(self.selected_index) {
-                            let template = &NODE_TEMPLATES[idx];
-                            result = Some(create_node_from_template(template, library, self.create_position));
-                            should_close = true;
-                        }
-                    }
-                    if ui.button("Cancel").clicked() {
-                        should_close = true;
-                    }
-                });
             });
 
         if should_close {

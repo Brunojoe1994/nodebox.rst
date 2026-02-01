@@ -185,32 +185,39 @@ impl AnimationBar {
     pub fn show(&mut self, ui: &mut egui::Ui) -> AnimationEvent {
         let mut event = AnimationEvent::None;
 
-        // Background
+        // Clean background - seamless with panel
         let rect = ui.available_rect_before_wrap();
-        ui.painter().rect_filled(rect, 0.0, theme::ANIMATION_BAR_BACKGROUND);
+        ui.painter().rect_filled(rect, 0.0, theme::PANEL_BG);
+
+        // Subtle top border only
+        ui.painter().line_segment(
+            [
+                egui::pos2(rect.min.x, rect.min.y),
+                egui::pos2(rect.max.x, rect.min.y),
+            ],
+            egui::Stroke::new(1.0, theme::BORDER_COLOR),
+        );
 
         ui.horizontal(|ui| {
-            ui.add_space(8.0);
+            ui.add_space(theme::PADDING);
 
-            // Rewind button
-            if ui.button("⏮").on_hover_text("Rewind").clicked() {
+            // Compact playback controls - smaller buttons
+            if ui.small_button("⏮").on_hover_text("Rewind").clicked() {
                 self.rewind();
                 event = AnimationEvent::Rewind;
             }
 
-            // Step back button
-            if ui.button("⏪").on_hover_text("Step backward").clicked() {
+            if ui.small_button("⏪").on_hover_text("Step backward").clicked() {
                 self.step_backward();
                 event = AnimationEvent::StepBack;
             }
 
-            // Play/Pause button
             let (play_icon, play_tooltip) = if self.is_playing() {
                 ("⏸", "Pause")
             } else {
                 ("▶", "Play")
             };
-            if ui.button(play_icon).on_hover_text(play_tooltip).clicked() {
+            if ui.small_button(play_icon).on_hover_text(play_tooltip).clicked() {
                 if self.is_playing() {
                     self.pause();
                     event = AnimationEvent::Pause;
@@ -220,31 +227,28 @@ impl AnimationBar {
                 }
             }
 
-            // Step forward button
-            if ui.button("⏩").on_hover_text("Step forward").clicked() {
+            if ui.small_button("⏩").on_hover_text("Step forward").clicked() {
                 self.step_forward();
                 event = AnimationEvent::StepForward;
             }
 
-            // Go to end button
-            if ui.button("⏭").on_hover_text("Go to end").clicked() {
+            if ui.small_button("⏭").on_hover_text("Go to end").clicked() {
                 self.go_to_end();
                 event = AnimationEvent::GoToEnd;
             }
 
-            // Stop button
-            if ui.button("⏹").on_hover_text("Stop").clicked() {
+            if ui.small_button("⏹").on_hover_text("Stop").clicked() {
                 self.stop();
                 event = AnimationEvent::Stop;
             }
 
-            ui.separator();
+            ui.add_space(theme::PADDING);
 
-            // Frame counter
+            // Frame counter - more compact
             ui.label(
-                egui::RichText::new("Frame:")
-                    .color(theme::TEXT_NORMAL)
-                    .size(11.0),
+                egui::RichText::new("Frame")
+                    .color(theme::TEXT_SUBDUED)
+                    .size(10.0),
             );
             let mut frame = self.frame as i32;
             let frame_response = ui.add(
@@ -258,18 +262,18 @@ impl AnimationBar {
             }
 
             ui.label(
-                egui::RichText::new(format!("/ {}", self.end_frame))
+                egui::RichText::new(format!("/{}", self.end_frame))
                     .color(theme::TEXT_DISABLED)
-                    .size(11.0),
+                    .size(10.0),
             );
 
-            ui.separator();
+            ui.add_space(theme::PADDING);
 
-            // FPS control
+            // FPS control - more compact
             ui.label(
-                egui::RichText::new("FPS:")
-                    .color(theme::TEXT_NORMAL)
-                    .size(11.0),
+                egui::RichText::new("FPS")
+                    .color(theme::TEXT_SUBDUED)
+                    .size(10.0),
             );
             let mut fps = self.fps as i32;
             let fps_response = ui.add(
@@ -282,12 +286,15 @@ impl AnimationBar {
                 event = AnimationEvent::FpsChanged(self.fps);
             }
 
-            ui.separator();
+            ui.add_space(theme::PADDING);
 
-            // Loop toggle
-            if ui.checkbox(&mut self.loop_enabled, "Loop").changed() {
-                // Loop toggle doesn't emit a specific event
-            }
+            // Loop toggle - subtle checkbox
+            ui.checkbox(&mut self.loop_enabled, "");
+            ui.label(
+                egui::RichText::new("Loop")
+                    .color(if self.loop_enabled { theme::TEXT_DEFAULT } else { theme::TEXT_SUBDUED })
+                    .size(10.0),
+            );
         });
 
         event
