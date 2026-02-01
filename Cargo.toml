@@ -3,10 +3,10 @@ name = "nodebox"
 version.workspace = true
 edition.workspace = true
 
-default-run = "nodebox"
+default-run = "NodeBox"
 
 [[bin]]
-name = "nodebox"
+name = "NodeBox"
 path = "src/main.rs"
 
 [dependencies]
