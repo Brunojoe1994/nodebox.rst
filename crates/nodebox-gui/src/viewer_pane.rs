@@ -8,6 +8,11 @@ use crate::pan_zoom::PanZoom;
 use crate::state::AppState;
 use crate::theme;
 
+#[cfg(feature = "gpu-rendering")]
+use crate::vello_viewer::VelloViewer;
+#[cfg(feature = "gpu-rendering")]
+use std::hash::{Hash, Hasher};
+
 /// Result of handle interaction.
 #[derive(Clone, Debug)]
 pub enum HandleResult {
@@ -203,6 +208,15 @@ pub struct ViewerPane {
     is_panning: bool,
     /// Cached digit textures for point numbers.
     digit_cache: DigitCache,
+    /// GPU-accelerated Vello viewer (when gpu-rendering feature is enabled).
+    #[cfg(feature = "gpu-rendering")]
+    vello_viewer: VelloViewer,
+    /// Whether to use GPU rendering (can be toggled at runtime).
+    #[cfg(feature = "gpu-rendering")]
+    pub use_gpu_rendering: bool,
+    /// Previous geometry hash for cache invalidation.
+    #[cfg(feature = "gpu-rendering")]
+    prev_geometry_hash: u64,
 }
 
 impl Default for ViewerPane {
@@ -228,6 +242,12 @@ impl ViewerPane {
             is_space_pressed: false,
             is_panning: false,
             digit_cache: DigitCache::new(),
+            #[cfg(feature = "gpu-rendering")]
+            vello_viewer: VelloViewer::new(),
+            #[cfg(feature = "gpu-rendering")]
+            use_gpu_rendering: true, // Default to GPU rendering when available
+            #[cfg(feature = "gpu-rendering")]
+            prev_geometry_hash: 0,
         }
     }
 
@@ -263,6 +283,30 @@ impl ViewerPane {
     /// Reset zoom to 100% (actual size).
     pub fn reset_zoom(&mut self) {
         self.pan_zoom.reset();
+    }
+
+    /// Compute a hash of the geometry for cache invalidation.
+    #[cfg(feature = "gpu-rendering")]
+    fn hash_geometry(geometry: &[Path]) -> u64 {
+        use std::collections::hash_map::DefaultHasher;
+        let mut hasher = DefaultHasher::new();
+        // Hash path count and basic properties
+        geometry.len().hash(&mut hasher);
+        for path in geometry {
+            path.contours.len().hash(&mut hasher);
+            for contour in &path.contours {
+                contour.points.len().hash(&mut hasher);
+                contour.closed.hash(&mut hasher);
+            }
+            // Hash colors (converting to integer representation)
+            if let Some(fill) = path.fill {
+                ((fill.r * 255.0) as u32).hash(&mut hasher);
+                ((fill.g * 255.0) as u32).hash(&mut hasher);
+                ((fill.b * 255.0) as u32).hash(&mut hasher);
+                ((fill.a * 255.0) as u32).hash(&mut hasher);
+            }
+        }
+        hasher.finish()
     }
 
     /// Get a mutable reference to the handles.
@@ -437,13 +481,55 @@ impl ViewerPane {
             self.draw_canvas_border(&painter, center, state.library.width(), state.library.height());
         }
 
-        // Draw all geometry
-        for path in &state.geometry {
-            self.draw_path(&painter, path, center);
+        // Draw all geometry (using GPU or CPU rendering)
+        #[cfg(feature = "gpu-rendering")]
+        {
+            if self.use_gpu_rendering && self.vello_viewer.is_available() {
+                // Check if geometry changed
+                let geometry_hash = Self::hash_geometry(&state.geometry);
+                if geometry_hash != self.prev_geometry_hash {
+                    self.vello_viewer.invalidate();
+                    self.prev_geometry_hash = geometry_hash;
+                }
 
-            // Draw points if enabled
-            if self.show_points {
-                self.draw_points(&painter, path, center);
+                // Also invalidate on pan/zoom changes
+                self.vello_viewer.set_background_color(state.background_color);
+
+                // Build transform from pan/zoom state
+                let transform = vello::kurbo::Affine::translate((
+                    (center.x + self.pan_zoom.pan.x) as f64,
+                    (center.y + self.pan_zoom.pan.y) as f64,
+                )) * vello::kurbo::Affine::scale(self.pan_zoom.zoom as f64);
+
+                // Render with Vello
+                self.vello_viewer.show(ui, &state.geometry, transform, rect);
+
+                // Draw points overlay if enabled (still use egui for this)
+                if self.show_points {
+                    for path in &state.geometry {
+                        self.draw_points(&painter, path, center);
+                    }
+                }
+            } else {
+                // Fallback to CPU rendering
+                for path in &state.geometry {
+                    self.draw_path(&painter, path, center);
+
+                    if self.show_points {
+                        self.draw_points(&painter, path, center);
+                    }
+                }
+            }
+        }
+
+        #[cfg(not(feature = "gpu-rendering"))]
+        {
+            for path in &state.geometry {
+                self.draw_path(&painter, path, center);
+
+                if self.show_points {
+                    self.draw_points(&painter, path, center);
+                }
             }
         }
 

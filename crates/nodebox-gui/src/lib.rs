@@ -45,6 +45,8 @@ mod viewer_pane;
 pub mod vello_convert;
 #[cfg(feature = "gpu-rendering")]
 pub mod vello_renderer;
+#[cfg(feature = "gpu-rendering")]
+pub mod vello_viewer;
 
 // Re-export key types for testing and external use
 pub use app::NodeBoxApp;
@@ -61,6 +63,8 @@ pub use nodebox_core::Value;
 pub use vello_convert::{convert_paths, VelloPath};
 #[cfg(feature = "gpu-rendering")]
 pub use vello_renderer::{VelloConfig, VelloError, VelloRenderer, ViewTransform};
+#[cfg(feature = "gpu-rendering")]
+pub use vello_viewer::VelloViewer;
 
 mod native_menu;
 

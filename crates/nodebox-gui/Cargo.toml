@@ -21,6 +21,7 @@ nodebox-svg = { path = "../nodebox-svg" }
 eframe = "0.30"
 egui = "0.30"
 egui_extras = { version = "0.30", features = ["image"] }
+egui-wgpu = { version = "0.30", optional = true }
 
 # File dialogs
 rfd = "0.15"
@@ -39,9 +40,13 @@ muda = "0.15"
 
 [features]
 default = []
-gpu-rendering = ["dep:vello"]
+gpu-rendering = ["dep:vello", "dep:egui-wgpu", "dep:pollster", "eframe/wgpu"]
 
 [dependencies.vello]
+workspace = true
+optional = true
+
+[dependencies.pollster]
 workspace = true
 optional = true
 
