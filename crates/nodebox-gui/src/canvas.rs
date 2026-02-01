@@ -8,6 +8,7 @@ use eframe::egui::{self, Color32, Pos2, Rect, Stroke, Vec2};
 use nodebox_core::geometry::{Color, Path, PointType, Point};
 use crate::handles::{HandleSet, Handle, ellipse_handles, rect_handles};
 use crate::state::AppState;
+use crate::theme;
 
 /// The canvas viewer widget.
 pub struct CanvasViewer {
@@ -122,14 +123,14 @@ impl CanvasViewer {
                     origin - Vec2::new(crosshair_size, 0.0),
                     origin + Vec2::new(crosshair_size, 0.0),
                 ],
-                Stroke::new(1.0, egui::Color32::GRAY),
+                Stroke::new(1.0, theme::VIEWER_CROSSHAIR),
             );
             painter.line_segment(
                 [
                     origin - Vec2::new(0.0, crosshair_size),
                     origin + Vec2::new(0.0, crosshair_size),
                 ],
-                Stroke::new(1.0, egui::Color32::GRAY),
+                Stroke::new(1.0, theme::VIEWER_CROSSHAIR),
             );
         }
 
@@ -261,7 +262,7 @@ impl CanvasViewer {
     /// Draw a background grid.
     fn draw_grid(&self, painter: &egui::Painter, rect: Rect) {
         let grid_size = 50.0 * self.zoom;
-        let grid_color = egui::Color32::from_rgba_unmultiplied(200, 200, 200, 30);
+        let grid_color = theme::viewer_grid();
 
         let center = rect.center().to_vec2();
         let origin = self.pan + center;

@@ -3,11 +3,13 @@
 use eframe::egui::{self, Color32, Pos2, Stroke, Vec2};
 use nodebox_core::geometry::Point;
 
+use crate::theme;
+
 /// The size of handle points (width/height of the square).
 const HANDLE_SIZE: f32 = 6.0;
 
-/// Blue color for handles (#3366ff).
-pub const HANDLE_COLOR: Color32 = Color32::from_rgb(0x33, 0x66, 0xff);
+/// Violet color for handles (matches theme accent).
+pub const HANDLE_COLOR: Color32 = theme::HANDLE_PRIMARY;
 
 /// Drag state for FourPointHandle.
 #[derive(Clone, Copy, Debug, PartialEq, Default)]

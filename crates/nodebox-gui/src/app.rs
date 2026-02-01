@@ -469,19 +469,9 @@ impl eframe::App for NodeBoxApp {
                     self.parameters.show(ui, &mut self.state);
                 });
 
-                // Single clean separator between sections
-                let sep_y = available.min.y + split_y;
-                ui.painter().line_segment(
-                    [
-                        Pos2::new(available.min.x, sep_y),
-                        Pos2::new(available.max.x, sep_y),
-                    ],
-                    egui::Stroke::new(1.0, theme::BORDER_COLOR),
-                );
-
-                // Bottom: Network pane
+                // Bottom: Network pane (headers have their own borders)
                 let network_rect = Rect::from_min_max(
-                    Pos2::new(available.min.x, available.min.y + split_y + 1.0),
+                    Pos2::new(available.min.x, available.min.y + split_y),
                     available.max,
                 );
 

@@ -26,11 +26,26 @@ pub fn draw_pane_header_with_title(
         egui::Sense::hover(),
     );
 
+    // Pixel-align the rect for crisp borders
+    let aligned_rect = Rect::from_min_max(
+        egui::pos2(header_rect.min.x.floor(), header_rect.min.y.floor()),
+        egui::pos2(header_rect.max.x.ceil(), header_rect.max.y.floor()),
+    );
+
     // Header background
     ui.painter().rect_filled(
-        header_rect,
+        aligned_rect,
         0.0,
         theme::PANE_HEADER_BACKGROUND_COLOR,
+    );
+
+    // Top border (1px light line)
+    ui.painter().line_segment(
+        [
+            egui::pos2(aligned_rect.left(), aligned_rect.top() + 0.5),
+            egui::pos2(aligned_rect.right(), aligned_rect.top() + 0.5),
+        ],
+        egui::Stroke::new(1.0, theme::SLATE_700),
     );
 
     // Title on left (UPPERCASE)
@@ -55,6 +70,15 @@ pub fn draw_pane_header_with_title(
             egui::pos2(sep_x, header_rect.bottom() - theme::PADDING_SMALL),
         ],
         egui::Stroke::new(1.0, theme::TEXT_DISABLED),
+    );
+
+    // Bottom border (1px dark line) - draw at bottom edge
+    ui.painter().line_segment(
+        [
+            egui::pos2(aligned_rect.left(), aligned_rect.bottom() - 0.5),
+            egui::pos2(aligned_rect.right(), aligned_rect.bottom() - 0.5),
+        ],
+        egui::Stroke::new(1.0, theme::SLATE_950),
     );
 
     // Return header rect and x position after separator (8px margin)
