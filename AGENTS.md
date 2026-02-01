@@ -47,13 +47,13 @@ Prereqs: Java JDK and Apache Ant are required; Maven is used for dependency reso
 
 **IMPORTANT: When working on any GUI component, always consult `STYLE_GUIDE.md` first.**
 
-The NodeBox GUI follows a Figma-inspired design philosophy:
+The NodeBox GUI follows a **Linear-inspired design philosophy**:
 
-- **Angular & geometric** — square edges, minimal rounding (4px for all elements)
-- **Typography-driven** — use text size/color for hierarchy, not decoration
-- **Space over lines** — whitespace delineates sections, borders are structural only
-- **Subtle & functional** — no shadows, minimal hover effects, every element has purpose
-- **High contrast dark theme** — comfortable for extended use
+- **Sharp & geometric** — 90° angles, straight lines, zero corner radius by default
+- **No borders** — use background color differentiation between panels
+- **Violet accent** — purple/violet for selections, links, and highlights
+- **Deep dark theme** — rich blacks with subtle cool undertones
+- **Subtle rounding only for selections** — 4px rounding on selected/hovered items
 
 ### Quick Reference
 
@@ -61,25 +61,25 @@ All tokens are in `crates/nodebox-gui/src/theme.rs`. Key patterns:
 
 ```rust
 use crate::theme::{
-    // Colors
-    PANEL_BG, HOVER_BG, SELECTION_BG,
-    TEXT_STRONG, TEXT_DEFAULT, TEXT_SUBDUED,
-    BLUE_500, BORDER_COLOR,
+    // Backgrounds (layered, darkest to lightest)
+    PANEL_BG, TAB_BAR_BG, SURFACE_ELEVATED, HOVER_BG, SELECTION_BG,
 
-    // Spacing (8px grid)
+    // Text (brightest to dimmest)
+    TEXT_STRONG, TEXT_DEFAULT, TEXT_SUBDUED, TEXT_DISABLED,
+
+    // Accents
+    VIOLET_400, VIOLET_500, VIOLET_900,
+
+    // Spacing (4px grid)
     PADDING, PADDING_SMALL, PADDING_LARGE,
-
-    // Heights
-    ROW_HEIGHT, LIST_ITEM_HEIGHT, PANE_HEADER_HEIGHT,
 };
 ```
 
 **See `STYLE_GUIDE.md` for complete documentation including:**
-- Full color palette and semantic tokens
-- Typography scale and text hierarchy
-- Spacing system and layout patterns
-- Component patterns (headers, buttons, lists, dialogs)
-- Interaction states and hover effects
+- Full Linear-inspired color palette
+- Sharp corners philosophy (0px default, 4px for selections)
+- No-border panel differentiation patterns
+- Component patterns with code examples
 - Do's and Don'ts checklist
 
 ## API Design & Backwards Compatibility

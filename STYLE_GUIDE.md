@@ -1,6 +1,6 @@
 # NodeBox Design System
 
-This document defines the visual language and design principles for the NodeBox GUI. All UI development should follow these guidelines to ensure a consistent, professional, and usable interface.
+This document defines the visual language and design principles for the NodeBox GUI. All UI development should follow these guidelines to ensure a consistent, professional, and modern interface.
 
 **Reference Implementation:** `crates/nodebox-gui/src/theme.rs`
 
@@ -8,108 +8,112 @@ This document defines the visual language and design principles for the NodeBox 
 
 ## Design Philosophy
 
-NodeBox follows a **Figma-inspired design philosophy** with these core principles:
+NodeBox follows a **Linear-inspired design philosophy** with these core principles:
 
-### 1. Angular & Geometric
-- **Square edges preferred** over excessive rounding
-- Corner radii: `4px` for all elements (panels, windows, widgets)
-- No decorative curves or ornamental shapes
-- Grid-aligned elements create visual harmony
+### 1. Sharp & Geometric
+- **Straight lines and 90° angles** for a clean, precise aesthetic
+- Most UI elements have **zero corner radius** — sharp rectangles
+- Subtle rounding (`4px`) only for specific highlighted elements:
+  - Selected items in lists/dialogs (e.g., node selection dialog)
+  - Focused input fields
+- Creates a professional, tool-like appearance
 
-### 2. Typography-Driven Hierarchy
-- **Text is the primary visual element** — use size, weight, and color to create hierarchy
-- Let typography do the work instead of boxes, badges, or icons
-- Strong contrast between heading, body, and subdued text levels
-- Consistent font sizes across the entire application
+### 2. No Borders, Use Backgrounds
+- **Eliminate borders wherever possible** — they add visual noise
+- Delineate sections through background color differentiation
+- Panels are distinguished by subtle background shade changes
+- Only use borders for:
+  - Window/dialog outer edges (1px, very subtle)
+  - Focus states on inputs
+  - Critical separation needs
 
-### 3. Space Over Lines
-- **Use whitespace to delineate sections** instead of borders and dividers
-- Reserve borders for structural elements (panels, inputs, selections)
-- Consistent 8px-based spacing grid creates visual rhythm
-- Generous padding makes content breathable
+### 3. Deep, Rich Dark Theme
+- **Near-black backgrounds** with subtle cool undertones
+- Multiple gray levels create depth through layering
+- Darker = further back, lighter = elevated/interactive
+- Comfortable for extended use, reduces eye strain
 
-### 4. Subtle & Functional
-- **No drop shadows** on panels or UI elements
-- Minimal hover effects (1px expansion, subtle background change)
-- State changes through color, not animation or decoration
-- Every visual element must serve a purpose
+### 4. Violet Accent
+- **Purple/violet as the primary accent color** — distinctive and modern
+- Used for: selections, links, active states, primary actions
+- Adds personality without overwhelming
+- Status colors: green (success), yellow (warning), red (error)
 
-### 5. High Contrast Dark Theme
-- **Optimized for extended use** with comfortable contrast ratios
-- White text on dark backgrounds for primary content
-- Subtle gray variations create depth without visual noise
+### 5. Generous Spacing
+- **Breathable, airy layouts** — don't crowd elements
+- Consistent 4px grid for all dimensions
+- Larger padding creates a premium feel
+- White space is a feature, not wasted space
 
 ---
 
 ## Color System
 
-### Gray Scale (21-stop, Dark Theme)
+### Gray Scale (Linear-inspired Dark Theme)
 
-The gray scale provides smooth transitions for backgrounds, borders, and text.
+Deep blacks with subtle cool undertones, creating a sophisticated dark interface.
 
-| Token | RGB | Usage |
-|-------|-----|-------|
-| `GRAY_0` | `(0, 0, 0)` | Pure black (rarely used) |
-| `GRAY_100` | `(13, 16, 17)` | Main panel backgrounds |
-| `GRAY_150` | `(20, 24, 25)` | Bottom bars, recessed areas |
-| `GRAY_200` | `(28, 33, 35)` | Tab bars, input backgrounds |
-| `GRAY_250` | `(38, 43, 46)` | Borders, pane headers |
-| `GRAY_300` | `(49, 56, 59)` | Inactive widget backgrounds |
-| `GRAY_325` | `(55, 63, 66)` | Hover/active states |
-| `GRAY_400` | `(76, 86, 90)` | Disabled text, secondary borders |
-| `GRAY_550` | `(125, 140, 146)` | Subdued/muted text |
-| `GRAY_700` | `(174, 194, 202)` | Header text |
-| `GRAY_775` | `(202, 216, 222)` | Default body text |
-| `GRAY_800` | `(211, 222, 227)` | Bright text variant |
-| `GRAY_1000` | `(255, 255, 255)` | Strong/active text |
+| Token | RGB | Hex | Usage |
+|-------|-----|-----|-------|
+| `GRAY_0` | `(0, 0, 0)` | #000000 | Pure black |
+| `GRAY_50` | `(9, 9, 11)` | #09090B | Deepest background |
+| `GRAY_100` | `(17, 17, 19)` | #111113 | Main panel background |
+| `GRAY_150` | `(23, 23, 26)` | #17171A | Secondary panels, sidebar |
+| `GRAY_200` | `(31, 31, 35)` | #1F1F23 | Elevated surfaces, inputs |
+| `GRAY_250` | `(39, 39, 43)` | #27272B | Subtle borders, hover bg |
+| `GRAY_300` | `(49, 49, 54)` | #313136 | Widget backgrounds |
+| `GRAY_350` | `(55, 55, 61)` | #37373D | Active/pressed states |
+| `GRAY_400` | `(75, 75, 82)` | #4B4B52 | Disabled elements |
+| `GRAY_500` | `(107, 107, 115)` | #6B6B73 | Muted text, icons |
+| `GRAY_600` | `(139, 139, 148)` | #8B8B94 | Secondary text |
+| `GRAY_700` | `(171, 171, 181)` | #ABABB5 | Body text |
+| `GRAY_800` | `(219, 219, 224)` | #DBDBE0 | Primary text |
+| `GRAY_900` | `(235, 235, 240)` | #EBEBF0 | Bright/emphasized text |
+| `GRAY_1000` | `(255, 255, 255)` | #FFFFFF | Pure white |
 
-### Primary Accent: Blue
+### Primary Accent: Violet
 
-Blue is the primary accent color for selections, links, and interactive highlights.
+Purple/violet creates a distinctive, modern identity.
 
-| Token | RGB | Usage |
-|-------|-----|-------|
-| `BLUE_350` | `(24, 73, 187)` | Selection backgrounds |
-| `BLUE_400` | `(51, 102, 255)` | Selection strokes |
-| `BLUE_500` | `(68, 138, 255)` | Links, value text, primary accent |
+| Token | RGB | Hex | Usage |
+|-------|-----|-----|-------|
+| `VIOLET_900` | `(45, 38, 64)` | #2D2640 | Selection background (subtle) |
+| `VIOLET_600` | `(124, 58, 237)` | #7C3AED | Pressed/darker accent |
+| `VIOLET_500` | `(139, 92, 246)` | #8B5CF6 | Primary accent |
+| `VIOLET_400` | `(167, 139, 250)` | #A78BFA | Hover/lighter accent |
 
 ### Status Colors
 
 Use sparingly for semantic feedback only.
 
-| Token | RGB | Usage |
-|-------|-----|-------|
-| `SUCCESS_GREEN` | `(0, 218, 126)` | Success states, valid input |
-| `WARNING_ORANGE` | `(255, 122, 12)` | Warnings, caution states |
-| `ERROR_RED` | `(171, 1, 22)` | Errors, destructive actions |
+| Token | RGB | Hex | Usage |
+|-------|-----|-----|-------|
+| `SUCCESS_GREEN` | `(34, 197, 94)` | #22C55E | Success, valid |
+| `WARNING_YELLOW` | `(234, 179, 8)` | #EAB308 | Warning, caution |
+| `ERROR_RED` | `(239, 68, 68)` | #EF4444 | Error, danger |
 
 ### Semantic Color Mapping
 
-**Always use semantic tokens**, never raw gray values:
+**Always use semantic tokens**, never raw values:
 
 ```rust
-// Background colors
-PANEL_BG          // Main panel background
-TOP_BAR_BG        // Title/top bar
-TAB_BAR_BG        // Tab bar background
-BOTTOM_BAR_BG     // Footer/bottom bar
-TEXT_EDIT_BG      // Input field background
-HOVER_BG          // Hover state background
-SELECTION_BG      // Selection highlight
+// Backgrounds (darkest to lightest)
+PANEL_BG           // Main panels (GRAY_100)
+TAB_BAR_BG         // Sidebars, secondary (GRAY_150)
+SURFACE_ELEVATED   // Cards, dialogs, inputs (GRAY_200)
+HOVER_BG           // Hover states (GRAY_250)
+SELECTION_BG       // Selected items (VIOLET_900)
 
-// Text colors
-TEXT_STRONG       // Primary/active text (white)
-TEXT_DEFAULT      // Body text
-TEXT_SUBDUED      // Secondary/muted text
-TEXT_DISABLED     // Disabled/non-interactive
+// Text (brightest to dimmest)
+TEXT_STRONG        // Emphasized, active (GRAY_900)
+TEXT_DEFAULT       // Body text (GRAY_700)
+TEXT_SUBDUED       // Secondary info (GRAY_500)
+TEXT_DISABLED      // Disabled (GRAY_400)
 
-// Widget colors
-WIDGET_INACTIVE_BG
-WIDGET_HOVERED_BG
-WIDGET_ACTIVE_BG
-WIDGET_NONINTERACTIVE_BG
-BORDER_COLOR
-BORDER_SECONDARY
+// Widgets
+WIDGET_INACTIVE_BG   // Button default (GRAY_250)
+WIDGET_HOVERED_BG    // Button hover (GRAY_300)
+WIDGET_ACTIVE_BG     // Button pressed (GRAY_350)
 ```
 
 ---
@@ -120,46 +124,42 @@ BORDER_SECONDARY
 
 | Token | Size | Usage |
 |-------|------|-------|
-| `FONT_SIZE_SMALL` | 11px | Labels, captions, metadata |
-| `FONT_SIZE_BASE` | 12px | Body text, buttons, inputs |
+| `FONT_SIZE_SMALL` | 11px | Labels, captions |
+| `FONT_SIZE_BASE` | 13px | Body text, buttons |
 | `FONT_SIZE_HEADING` | 16px | Section headings |
 
 ### Text Hierarchy
 
-Use text color to establish hierarchy, not font weight:
+Use text color (not weight) to establish hierarchy:
 
-1. **Strong** (`TEXT_STRONG` / white) — Active, focused, or primary content
-2. **Default** (`TEXT_DEFAULT`) — Standard body text
-3. **Subdued** (`TEXT_SUBDUED`) — Secondary information, hints
-4. **Disabled** (`TEXT_DISABLED`) — Non-interactive elements
+1. **Strong** (`TEXT_STRONG` / GRAY_900) — Active, focused, primary
+2. **Default** (`TEXT_DEFAULT` / GRAY_700) — Standard body text
+3. **Subdued** (`TEXT_SUBDUED` / GRAY_500) — Secondary, hints
+4. **Disabled** (`TEXT_DISABLED` / GRAY_400) — Non-interactive
 
 ```rust
-// Example: Parameter row
-ui.label(RichText::new("Width").color(TEXT_SUBDUED));      // Label
-ui.label(RichText::new("1920").color(BLUE_500));           // Value (interactive)
+// Example: List item
+ui.label(RichText::new("Primary text").color(TEXT_DEFAULT));
+ui.label(RichText::new("Secondary").color(TEXT_SUBDUED));
 ```
-
-### Line Height
-
-Use `LINE_HEIGHT_RATIO = 1.333` for comfortable reading in dense UIs.
 
 ---
 
 ## Spacing System
 
-All spacing follows an **8px grid** for visual consistency.
+All spacing follows a **4px grid** for visual consistency.
 
 ### Spacing Tokens
 
 | Token | Value | Usage |
 |-------|-------|-------|
-| `PADDING_SMALL` | 4px | Tight spaces, icon margins |
-| `PADDING` | 8px | Standard padding, item spacing |
-| `PADDING_LARGE` | 12px | Button padding, panel margins |
-| `VIEW_PADDING` | 12px | Outer panel padding |
-| `ITEM_SPACING` | 8px | Space between list items |
-| `INDENT` | 16px | Hierarchical indentation |
-| `ICON_TEXT_PADDING` | 4px | Icon-to-text gap |
+| `PADDING_SMALL` | 4px | Tight spaces, icon gaps |
+| `PADDING` | 8px | Standard padding |
+| `PADDING_LARGE` | 12px | Button padding, sections |
+| `PADDING_XL` | 16px | Large section gaps |
+| `VIEW_PADDING` | 12px | Panel content margins |
+| `ITEM_SPACING` | 8px | Between list items |
+| `INDENT` | 16px | Tree/hierarchy indent |
 
 ### Layout Heights
 
@@ -167,33 +167,56 @@ All spacing follows an **8px grid** for visual consistency.
 |-------|-------|-------|
 | `TOP_BAR_HEIGHT` | 28px | Address bar, toolbar |
 | `TITLE_BAR_HEIGHT` | 24px | Pane headers |
-| `LIST_ITEM_HEIGHT` | 24px | List items, tree nodes |
-| `ROW_HEIGHT` | 24px | Parameter rows, table rows |
+| `LIST_ITEM_HEIGHT` | 28px | List items (taller for touch) |
+| `ROW_HEIGHT` | 24px | Parameter rows |
 | `TABLE_HEADER_HEIGHT` | 32px | Table headers |
 
-### Spacing Principles
+---
 
-1. **Use consistent spacing** — Same spacing between similar elements
-2. **Increase spacing to separate groups** — Use `PADDING_LARGE` between sections
-3. **Reduce spacing within groups** — Use `PADDING_SMALL` for related items
-4. **Align to the grid** — All dimensions should be multiples of 4px
+## Corner Radii
+
+Sharp corners by default, with subtle rounding for interactive highlights.
+
+| Token | Value | Usage |
+|-------|-------|-------|
+| `CORNER_RADIUS` | 0px | Panels, windows, dialogs — sharp edges |
+| `CORNER_RADIUS_SMALL` | 4px | Selected items, focused inputs only |
+
+**When to use `CORNER_RADIUS_SMALL` (4px):**
+- Selection highlight in node selection dialog
+- Hovered/selected list items
+- Focused text input fields
+
+**Everything else: sharp corners (0px)**
 
 ---
 
 ## Component Patterns
 
-### Pane Headers
+### Panels (No Borders)
 
-Consistent styling across all panes:
+Panels are distinguished by background color, not borders:
 
 ```rust
-let header_rect = ui.available_rect_before_wrap();
-let header_rect = header_rect.with_max_y(header_rect.min.y + PANE_HEADER_HEIGHT);
+// Main content area
+ui.painter().rect_filled(rect, 0.0, PANEL_BG);
 
-// Background
+// Sidebar or secondary panel
+ui.painter().rect_filled(rect, 0.0, TAB_BAR_BG);
+
+// Elevated card or section
+ui.painter().rect_filled(rect, CORNER_RADIUS, SURFACE_ELEVATED);
+```
+
+**Key principle:** Adjacent panels have different background shades. No borders needed.
+
+### Pane Headers
+
+Blend seamlessly with their panels:
+
+```rust
+// Header background matches panel, slightly lighter text
 ui.painter().rect_filled(header_rect, 0.0, PANE_HEADER_BACKGROUND_COLOR);
-
-// Title text
 ui.label(
     RichText::new("PARAMETERS")
         .size(FONT_SIZE_SMALL)
@@ -201,63 +224,68 @@ ui.label(
 );
 ```
 
-- Height: `24px` (`PANE_HEADER_HEIGHT`)
-- Background: `PANE_HEADER_BACKGROUND_COLOR` (GRAY_250)
-- Text: `PANE_HEADER_FOREGROUND_COLOR` (GRAY_700), 11px uppercase
-- No border on top, optional 1px border on bottom
+- Background: `GRAY_150` (matches sidebar tone)
+- Text: `GRAY_600` (subdued, not competing with content)
+- No bottom border — spacing separates header from content
 
 ### Buttons
 
-```rust
-// Standard button
-let response = ui.button(RichText::new("Export").size(FONT_SIZE_BASE));
+Sharp corners, no borders, background-based states:
 
-// Icon button (no text)
-let response = ui.add(egui::Button::new("⚙").frame(false));
+```rust
+let bg = if response.is_pointer_button_down_on() {
+    WIDGET_ACTIVE_BG
+} else if response.hovered() {
+    WIDGET_HOVERED_BG
+} else {
+    WIDGET_INACTIVE_BG
+};
+
+ui.painter().rect_filled(rect, 0.0, bg);  // Sharp corners
 ```
 
-- Padding: `12px` horizontal, `8px` vertical
-- Corner radius: `4px`
-- Hover: Background → `WIDGET_HOVERED_BG`, 1px expansion
-- Active: Background → `WIDGET_ACTIVE_BG`
+- Default: `GRAY_250`
+- Hover: `GRAY_300`
+- Active: `GRAY_350`
+- No border strokes, sharp 90° corners
 
 ### Input Fields
+
+Elevated background, sharp corners:
 
 ```rust
 let response = ui.add(
     egui::TextEdit::singleline(&mut value)
         .desired_width(100.0)
-        .font(FontId::proportional(FONT_SIZE_BASE))
 );
 ```
 
-- Background: `TEXT_EDIT_BG` (GRAY_200)
+- Background: `SURFACE_ELEVATED` (GRAY_200)
 - Text: `TEXT_DEFAULT`
-- Focused border: 1px `BLUE_400`
-- Corner radius: `4px`
+- No border by default, sharp corners
+- Focus: Subtle `VIOLET_500` border or 4px rounded highlight
 
-### Lists & Selections
+### Selections (Exception: Use Subtle Rounding)
+
+Selected items get subtle rounding to make them "pop":
 
 ```rust
-let is_selected = current_item == item_id;
-let is_hovered = response.hovered();
-
-let bg_color = if is_selected {
-    SELECTION_BG
+let bg = if is_selected {
+    SELECTION_BG  // Violet-tinted background
 } else if is_hovered {
     HOVER_BG
 } else {
     Color32::TRANSPARENT
 };
 
-ui.painter().rect_filled(item_rect, CORNER_RADIUS_SMALL, bg_color);
+// Use CORNER_RADIUS_SMALL (4px) for selections only
+ui.painter().rect_filled(item_rect, CORNER_RADIUS_SMALL, bg);
 ```
 
-- Item height: `24px` (`LIST_ITEM_HEIGHT`)
-- Selected: `SELECTION_BG` with 1px `BLUE_400` stroke
-- Hovered: `HOVER_BG`
-- Corner radius: `4px`
-- Inner padding: `8px`
+- Selected: `VIOLET_900` with 4px rounding
+- Hovered: `HOVER_BG` with 4px rounding
+- Default: transparent, no rounding
+- Text becomes `TEXT_STRONG` when selected
 
 ### Dialogs / Modals
 
@@ -265,64 +293,36 @@ ui.painter().rect_filled(item_rect, CORNER_RADIUS_SMALL, bg_color);
 egui::Window::new("Add Node")
     .fixed_size([500.0, 400.0])
     .frame(egui::Frame::window(&ctx.style())
-        .fill(PANEL_BG)
-        .stroke(Stroke::new(1.0, BORDER_COLOR))
-        .rounding(CORNER_RADIUS))
+        .fill(SURFACE_ELEVATED)
+        .stroke(Stroke::new(1.0, GRAY_250))
+        .rounding(0.0))  // Sharp corners
 ```
 
-- Fixed size (no resizing by default)
-- Background: `PANEL_BG`
-- Border: 1px `BORDER_COLOR`
-- Corner radius: `4px`
+- Background: `SURFACE_ELEVATED` (elevated from underlying content)
+- Border: 1px `GRAY_250` (only place we use a visible border)
+- Corner radius: `0px` (sharp)
 - No drop shadow
-
-### Separators
-
-Use sparingly — prefer spacing over lines:
-
-```rust
-// Horizontal separator
-ui.add(egui::Separator::default().horizontal());
-
-// Or draw manually for control
-let line_rect = Rect::from_min_max(
-    pos2(rect.left() + PADDING, y),
-    pos2(rect.right() - PADDING, y + 1.0)
-);
-ui.painter().rect_filled(line_rect, 0.0, BORDER_COLOR);
-```
-
-- Color: `BORDER_COLOR` (GRAY_250)
-- Thickness: 1px
-- Inset from edges by `PADDING`
 
 ---
 
 ## Interaction States
 
-### State Progression
+### State Progression (No Borders)
 
-| State | Background | Text | Border |
-|-------|------------|------|--------|
-| Noninteractive | `GRAY_150` | `TEXT_SUBDUED` | None |
-| Inactive | `GRAY_300` | `TEXT_DEFAULT` | None |
-| Hovered | `GRAY_325` | `TEXT_STRONG` | None |
-| Active/Pressed | `GRAY_325` | `TEXT_STRONG` | None |
-| Selected | `BLUE_350` | `TEXT_STRONG` | 1px `BLUE_400` |
-| Disabled | `GRAY_150` | `TEXT_DISABLED` | None |
+| State | Background | Text |
+|-------|------------|------|
+| Default | `GRAY_250` | `TEXT_DEFAULT` |
+| Hovered | `GRAY_300` | `TEXT_STRONG` |
+| Active/Pressed | `GRAY_350` | `TEXT_STRONG` |
+| Selected | `VIOLET_900` | `TEXT_STRONG` |
+| Disabled | `GRAY_150` | `TEXT_DISABLED` |
 
 ### Hover Effects
 
-- Background color change (subtle step up in gray scale)
-- 1px expansion on widgets
-- Cursor change to pointer for clickable elements
-- No shadows, glows, or animations
-
-### Focus States
-
-- Input fields: 1px `BLUE_400` border
-- Buttons: Same as hover state
-- List items: Selected state
+- Background color lightens one step
+- Text brightens to `TEXT_STRONG`
+- No expansion, no borders, no shadows
+- Cursor changes to pointer
 
 ---
 
@@ -332,37 +332,30 @@ ui.painter().rect_filled(line_rect, 0.0, BORDER_COLOR);
 
 ```
 ┌─────────────────────────────────────┐
-│ PANE HEADER (24px)                  │  ← PANE_HEADER_BACKGROUND_COLOR
-├─────────────────────────────────────┤
+│ PANE HEADER (24px)                  │  ← GRAY_150
 │                                     │
-│  Content Area                       │  ← PANEL_BG
+│  Content Area                       │  ← GRAY_100
 │  (VIEW_PADDING on all sides)        │
 │                                     │
 └─────────────────────────────────────┘
 ```
 
-### Parameter Panel Layout
+No borders between header and content — spacing creates separation.
+
+### Sidebar + Main Layout
 
 ```
-┌─────────────────────────────────────┐
-│ PARAMETERS    separator   Node Name │  ← Header (24px)
-├─────────────────────────────────────┤
-│ Label          │ Value              │  ← Row (24px each)
-│ Label          │ Value              │
-│ Label          │ Value              │
-│ ...                                 │
-└─────────────────────────────────────┘
+┌──────────┬──────────────────────────┐
+│          │                          │
+│ Sidebar  │  Main Content            │
+│ GRAY_150 │  GRAY_100                │
+│          │                          │
+└──────────┴──────────────────────────┘
 ```
 
-- Label width: `100px` fixed
-- Value: fills remaining space
-- Row height: `24px`
-- Horizontal spacing: `8px`
-- Vertical spacing: `0px` between rows (dense layout)
+Different background colors distinguish areas. No vertical border needed.
 
-### Grid Alignment
-
-The network view uses a 48px grid:
+### Network View Grid
 
 ```
 GRID_CELL_SIZE = 48px
@@ -379,21 +372,21 @@ NODE_ICON_SIZE = 24px
 
 ### Do
 
+- ✓ Use **sharp 90° corners** for most UI elements
+- ✓ Use background color to distinguish panels and sections
+- ✓ Apply subtle 4px rounding **only** for selected/hovered items
+- ✓ Use the violet accent for selections and links
+- ✓ Keep interfaces spacious with generous padding
 - ✓ Use semantic color tokens from `theme.rs`
-- ✓ Follow the 8px spacing grid
-- ✓ Use typography hierarchy for emphasis
-- ✓ Keep borders thin (1px) and subtle
-- ✓ Provide hover feedback on interactive elements
-- ✓ Test with actual content to verify spacing
 
 ### Don't
 
-- ✗ Hardcode hex color values
-- ✗ Add drop shadows to panels or dialogs
-- ✗ Use borders when spacing would suffice
-- ✗ Create custom fonts or sizes outside the system
-- ✗ Add decorative elements that don't serve function
-- ✗ Use animation for state changes (keep it snappy)
+- ✗ Round corners on panels, dialogs, or buttons — keep them sharp
+- ✗ Add borders to separate panels — use background colors instead
+- ✗ Use borders on buttons or list items
+- ✗ Add drop shadows (they add visual noise)
+- ✗ Hardcode color values — use tokens
+- ✗ Use expansion effects on hover — just change color
 
 ---
 
@@ -402,13 +395,13 @@ NODE_ICON_SIZE = 24px
 When creating new UI components:
 
 1. [ ] Import tokens from `crate::theme`
-2. [ ] Use semantic color constants, not raw values
-3. [ ] Align dimensions to 4px/8px grid
-4. [ ] Use standard heights (`ROW_HEIGHT`, `LIST_ITEM_HEIGHT`, etc.)
-5. [ ] Implement hover states with `HOVER_BG`
-6. [ ] Test with both short and long content
-7. [ ] Verify text is readable (proper contrast)
-8. [ ] Check alignment with adjacent components
+2. [ ] Use semantic colors, not raw values
+3. [ ] Use **sharp corners (0px)** by default
+4. [ ] Only use 4px rounding for selections/highlights
+5. [ ] **NO BORDERS** — use background differentiation
+6. [ ] Implement hover/active states via background color
+7. [ ] Use violet (`SELECTION_BG`) for selections
+8. [ ] Align to 4px grid
 
 ---
 
@@ -417,7 +410,7 @@ When creating new UI components:
 ```rust
 use crate::theme::{
     // Backgrounds
-    PANEL_BG, HOVER_BG, SELECTION_BG, TEXT_EDIT_BG,
+    PANEL_BG, TAB_BAR_BG, SURFACE_ELEVATED, HOVER_BG, SELECTION_BG,
 
     // Text
     TEXT_STRONG, TEXT_DEFAULT, TEXT_SUBDUED, TEXT_DISABLED,
@@ -425,20 +418,17 @@ use crate::theme::{
     // Widgets
     WIDGET_INACTIVE_BG, WIDGET_HOVERED_BG, WIDGET_ACTIVE_BG,
 
-    // Borders
-    BORDER_COLOR, CORNER_RADIUS, CORNER_RADIUS_SMALL,
+    // Accents
+    VIOLET_400, VIOLET_500, VIOLET_900,
+    SUCCESS_GREEN, WARNING_YELLOW, ERROR_RED,
 
-    // Spacing
-    PADDING, PADDING_SMALL, PADDING_LARGE, ITEM_SPACING,
+    // Layout
+    CORNER_RADIUS, CORNER_RADIUS_SMALL,
+    PADDING, PADDING_SMALL, PADDING_LARGE, PADDING_XL,
+    ROW_HEIGHT, LIST_ITEM_HEIGHT,
 
     // Typography
     FONT_SIZE_BASE, FONT_SIZE_SMALL, FONT_SIZE_HEADING,
-
-    // Heights
-    ROW_HEIGHT, LIST_ITEM_HEIGHT, PANE_HEADER_HEIGHT,
-
-    // Accents
-    BLUE_400, BLUE_500, SUCCESS_GREEN, WARNING_ORANGE, ERROR_RED,
 };
 ```
 
@@ -448,7 +438,7 @@ use crate::theme::{
 
 This design system is living documentation. When adding new patterns:
 
-1. First check if existing tokens cover your use case
-2. If new tokens are needed, add them to `theme.rs` with semantic names
+1. Check if existing tokens cover your use case
+2. Add new tokens to `theme.rs` with semantic names
 3. Update this document with the new pattern
-4. Ensure consistency with existing components
+4. **Remember: sharp corners, no borders, background differentiation**
