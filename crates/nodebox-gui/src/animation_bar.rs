@@ -304,27 +304,27 @@ impl AnimationBar {
         ui.visuals_mut().widgets.inactive.weak_bg_fill = theme::SLATE_800;
         ui.visuals_mut().widgets.inactive.bg_stroke = egui::Stroke::NONE;
         ui.visuals_mut().widgets.inactive.fg_stroke = egui::Stroke::new(1.0, theme::TEXT_DEFAULT);
-        ui.visuals_mut().widgets.inactive.rounding = egui::Rounding::ZERO;
+        ui.visuals_mut().widgets.inactive.corner_radius = egui::CornerRadius::ZERO;
         ui.visuals_mut().widgets.inactive.expansion = 0.0;
 
         ui.visuals_mut().widgets.hovered.bg_fill = theme::SLATE_700;
         ui.visuals_mut().widgets.hovered.weak_bg_fill = theme::SLATE_700;
         ui.visuals_mut().widgets.hovered.bg_stroke = egui::Stroke::NONE;
         ui.visuals_mut().widgets.hovered.fg_stroke = egui::Stroke::new(1.0, theme::TEXT_STRONG);
-        ui.visuals_mut().widgets.hovered.rounding = egui::Rounding::ZERO;
+        ui.visuals_mut().widgets.hovered.corner_radius = egui::CornerRadius::ZERO;
         ui.visuals_mut().widgets.hovered.expansion = 0.0;
 
         ui.visuals_mut().widgets.active.bg_fill = theme::SLATE_700;
         ui.visuals_mut().widgets.active.weak_bg_fill = theme::SLATE_700;
         ui.visuals_mut().widgets.active.bg_stroke = egui::Stroke::NONE;
         ui.visuals_mut().widgets.active.fg_stroke = egui::Stroke::new(1.0, theme::TEXT_STRONG);
-        ui.visuals_mut().widgets.active.rounding = egui::Rounding::ZERO;
+        ui.visuals_mut().widgets.active.corner_radius = egui::CornerRadius::ZERO;
         ui.visuals_mut().widgets.active.expansion = 0.0;
 
         ui.visuals_mut().widgets.noninteractive.bg_fill = theme::SLATE_800;
         ui.visuals_mut().widgets.noninteractive.weak_bg_fill = theme::SLATE_800;
         ui.visuals_mut().widgets.noninteractive.bg_stroke = egui::Stroke::NONE;
-        ui.visuals_mut().widgets.noninteractive.rounding = egui::Rounding::ZERO;
+        ui.visuals_mut().widgets.noninteractive.corner_radius = egui::CornerRadius::ZERO;
         ui.visuals_mut().widgets.noninteractive.expansion = 0.0;
 
         // Use consistent padding for button and text edit modes
@@ -357,22 +357,22 @@ impl AnimationBar {
         ui.visuals_mut().widgets.inactive.bg_fill = theme::SLATE_800;
         ui.visuals_mut().widgets.inactive.weak_bg_fill = theme::SLATE_800;
         ui.visuals_mut().widgets.inactive.bg_stroke = egui::Stroke::NONE;
-        ui.visuals_mut().widgets.inactive.rounding = egui::Rounding::ZERO;
+        ui.visuals_mut().widgets.inactive.corner_radius = egui::CornerRadius::ZERO;
 
         ui.visuals_mut().widgets.hovered.bg_fill = theme::SLATE_700;
         ui.visuals_mut().widgets.hovered.weak_bg_fill = theme::SLATE_700;
         ui.visuals_mut().widgets.hovered.bg_stroke = egui::Stroke::NONE;
-        ui.visuals_mut().widgets.hovered.rounding = egui::Rounding::ZERO;
+        ui.visuals_mut().widgets.hovered.corner_radius = egui::CornerRadius::ZERO;
 
         ui.visuals_mut().widgets.active.bg_fill = theme::SLATE_700;
         ui.visuals_mut().widgets.active.weak_bg_fill = theme::SLATE_700;
         ui.visuals_mut().widgets.active.bg_stroke = egui::Stroke::NONE;
-        ui.visuals_mut().widgets.active.rounding = egui::Rounding::ZERO;
+        ui.visuals_mut().widgets.active.corner_radius = egui::CornerRadius::ZERO;
 
         ui.visuals_mut().widgets.noninteractive.bg_fill = theme::SLATE_800;
         ui.visuals_mut().widgets.noninteractive.weak_bg_fill = theme::SLATE_800;
         ui.visuals_mut().widgets.noninteractive.bg_stroke = egui::Stroke::NONE;
-        ui.visuals_mut().widgets.noninteractive.rounding = egui::Rounding::ZERO;
+        ui.visuals_mut().widgets.noninteractive.corner_radius = egui::CornerRadius::ZERO;
 
         let response = ui.checkbox(checked, "");
 

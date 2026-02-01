@@ -11,7 +11,7 @@
 
 #![allow(dead_code)]
 
-use eframe::egui::{self, Color32, FontId, Rounding, Stroke, Style, Visuals};
+use eframe::egui::{self, Color32, CornerRadius, FontId, Stroke, Style, Visuals};
 
 // =============================================================================
 // SLATE SCALE (Tailwind v4 Slate Palette)
@@ -376,7 +376,7 @@ pub fn configure_style(ctx: &egui::Context) {
     // Spacing - generous for a modern, breathable feel
     style.spacing.item_spacing = egui::vec2(ITEM_SPACING, ITEM_SPACING);
     style.spacing.button_padding = egui::vec2(PADDING_LARGE, PADDING);
-    style.spacing.menu_margin = egui::Margin::same(MENU_SPACING);
+    style.spacing.menu_margin = egui::Margin::same(MENU_SPACING as i8);
     style.spacing.indent = INDENT;
     style.spacing.scroll = egui::style::ScrollStyle {
         bar_width: SCROLL_BAR_WIDTH,
@@ -388,7 +388,7 @@ pub fn configure_style(ctx: &egui::Context) {
     // Visuals - Window (sharp corners, subtle border)
     visuals.window_fill = SURFACE_ELEVATED;
     visuals.window_stroke = Stroke::new(1.0, SLATE_600); // Very subtle border
-    visuals.window_rounding = Rounding::ZERO; // Sharp 90° corners
+    visuals.window_corner_radius = CornerRadius::ZERO; // Sharp 90° corners
     visuals.window_shadow = egui::Shadow::NONE;
 
     // Visuals - Panel (no borders, use background differentiation)
@@ -399,29 +399,29 @@ pub fn configure_style(ctx: &egui::Context) {
     // Visuals - Widgets (sharp corners, minimal borders)
     visuals.widgets.noninteractive.bg_fill = WIDGET_NONINTERACTIVE_BG;
     visuals.widgets.noninteractive.fg_stroke = Stroke::new(1.0, TEXT_SUBDUED);
-    visuals.widgets.noninteractive.rounding = Rounding::ZERO;
+    visuals.widgets.noninteractive.corner_radius = CornerRadius::ZERO;
     visuals.widgets.noninteractive.bg_stroke = Stroke::NONE;
 
     visuals.widgets.inactive.bg_fill = WIDGET_INACTIVE_BG;
     visuals.widgets.inactive.fg_stroke = Stroke::new(1.0, TEXT_DEFAULT);
-    visuals.widgets.inactive.rounding = Rounding::ZERO;
+    visuals.widgets.inactive.corner_radius = CornerRadius::ZERO;
     visuals.widgets.inactive.bg_stroke = Stroke::NONE;
 
     visuals.widgets.hovered.bg_fill = WIDGET_HOVERED_BG;
     visuals.widgets.hovered.fg_stroke = Stroke::new(1.0, TEXT_STRONG);
-    visuals.widgets.hovered.rounding = Rounding::ZERO;
+    visuals.widgets.hovered.corner_radius = CornerRadius::ZERO;
     visuals.widgets.hovered.expansion = 0.0; // No expansion, just color change
     visuals.widgets.hovered.bg_stroke = Stroke::NONE;
 
     visuals.widgets.active.bg_fill = WIDGET_ACTIVE_BG;
     visuals.widgets.active.fg_stroke = Stroke::new(1.0, TEXT_STRONG);
-    visuals.widgets.active.rounding = Rounding::ZERO;
+    visuals.widgets.active.corner_radius = CornerRadius::ZERO;
     visuals.widgets.active.expansion = 0.0;
     visuals.widgets.active.bg_stroke = Stroke::NONE;
 
     visuals.widgets.open.bg_fill = WIDGET_ACTIVE_BG;
     visuals.widgets.open.fg_stroke = Stroke::new(1.0, TEXT_STRONG);
-    visuals.widgets.open.rounding = Rounding::ZERO;
+    visuals.widgets.open.corner_radius = CornerRadius::ZERO;
 
     // Selection (violet tint, no stroke for cleaner look)
     visuals.selection.bg_fill = SELECTION_BG;

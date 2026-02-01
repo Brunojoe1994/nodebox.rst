@@ -11,6 +11,8 @@ use crate::theme;
 #[cfg(feature = "gpu-rendering")]
 use crate::vello_viewer::VelloViewer;
 #[cfg(feature = "gpu-rendering")]
+use egui_wgpu::RenderState;
+#[cfg(feature = "gpu-rendering")]
 use std::hash::{Hash, Hasher};
 
 /// Result of handle interaction.
@@ -84,7 +86,7 @@ impl DigitCache {
         let font_id = egui::FontId::proportional(font_size);
 
         // Get the galley for measuring
-        let galley = ctx.fonts(|f| {
+        let galley = ctx.fonts_mut(|f| {
             f.layout_no_wrap(digit.to_string(), font_id.clone(), Color32::WHITE)
         });
 
@@ -134,6 +136,7 @@ impl DigitCache {
         ColorImage {
             size: [width, height],
             pixels,
+            source_size: egui::Vec2::new(width as f32, height as f32),
         }
     }
 
@@ -333,7 +336,23 @@ impl ViewerPane {
 
     /// Show the viewer pane with header tabs and toolbar.
     /// Returns any handle interaction result.
+    ///
+    /// When `gpu-rendering` feature is enabled, pass `render_state` for GPU-accelerated rendering.
+    #[cfg(feature = "gpu-rendering")]
+    pub fn show(&mut self, ui: &mut egui::Ui, state: &AppState, render_state: Option<&RenderState>) -> HandleResult {
+        self.show_impl(ui, state, render_state)
+    }
+
+    /// Show the viewer pane with header tabs and toolbar.
+    /// Returns any handle interaction result.
+    #[cfg(not(feature = "gpu-rendering"))]
     pub fn show(&mut self, ui: &mut egui::Ui, state: &AppState) -> HandleResult {
+        self.show_impl(ui, state)
+    }
+
+    /// Internal implementation of show.
+    #[cfg(feature = "gpu-rendering")]
+    fn show_impl(&mut self, ui: &mut egui::Ui, state: &AppState, render_state: Option<&RenderState>) -> HandleResult {
         // Remove spacing so content is snug against header
         ui.spacing_mut().item_spacing = egui::vec2(0.0, 0.0);
 
@@ -424,7 +443,7 @@ impl ViewerPane {
 
         // Content area (directly after header, no extra spacing)
         match self.current_tab {
-            ViewerTab::Viewer => self.show_canvas(ui, state),
+            ViewerTab::Viewer => self.show_canvas(ui, state, render_state),
             ViewerTab::Data => {
                 self.show_data_view(ui, state);
                 HandleResult::None
@@ -432,8 +451,110 @@ impl ViewerPane {
         }
     }
 
-    /// Show the canvas viewer.
-    fn show_canvas(&mut self, ui: &mut egui::Ui, state: &AppState) -> HandleResult {
+    /// Internal implementation of show (non-GPU version).
+    #[cfg(not(feature = "gpu-rendering"))]
+    fn show_impl(&mut self, ui: &mut egui::Ui, state: &AppState) -> HandleResult {
+        // Remove spacing so content is snug against header
+        ui.spacing_mut().item_spacing = egui::vec2(0.0, 0.0);
+
+        // Draw header with "VIEWER" title and separator
+        let (header_rect, mut x) = components::draw_pane_header_with_title(ui, "Viewer");
+
+        // Tab buttons after the separator
+        let (clicked, new_x) = components::header_tab_button(
+            ui,
+            header_rect,
+            x,
+            "Data",
+            self.current_tab == ViewerTab::Data,
+        );
+        if clicked {
+            self.current_tab = ViewerTab::Data;
+        }
+        x = new_x;
+
+        let (clicked, new_x) = components::header_tab_button(
+            ui,
+            header_rect,
+            x,
+            "Handles",
+            self.current_tab == ViewerTab::Viewer && self.show_handles,
+        );
+        if clicked && self.current_tab == ViewerTab::Viewer {
+            self.show_handles = !self.show_handles;
+        } else if clicked {
+            self.current_tab = ViewerTab::Viewer;
+        }
+        x = new_x;
+
+        let (clicked, new_x) = components::header_tab_button(
+            ui,
+            header_rect,
+            x,
+            "Points",
+            self.current_tab == ViewerTab::Viewer && self.show_points,
+        );
+        if clicked && self.current_tab == ViewerTab::Viewer {
+            self.show_points = !self.show_points;
+        } else if clicked {
+            self.current_tab = ViewerTab::Viewer;
+        }
+        x = new_x;
+
+        let (clicked, new_x) = components::header_tab_button(
+            ui,
+            header_rect,
+            x,
+            "Pt#",
+            self.current_tab == ViewerTab::Viewer && self.show_point_numbers,
+        );
+        if clicked && self.current_tab == ViewerTab::Viewer {
+            self.show_point_numbers = !self.show_point_numbers;
+        } else if clicked {
+            self.current_tab = ViewerTab::Viewer;
+        }
+        x = new_x;
+
+        let (clicked, new_x) = components::header_tab_button(
+            ui,
+            header_rect,
+            x,
+            "Origin",
+            self.current_tab == ViewerTab::Viewer && self.show_origin,
+        );
+        if clicked && self.current_tab == ViewerTab::Viewer {
+            self.show_origin = !self.show_origin;
+        } else if clicked {
+            self.current_tab = ViewerTab::Viewer;
+        }
+        x = new_x;
+
+        let (clicked, _) = components::header_tab_button(
+            ui,
+            header_rect,
+            x,
+            "Canvas",
+            self.current_tab == ViewerTab::Viewer && self.show_canvas_border,
+        );
+        if clicked && self.current_tab == ViewerTab::Viewer {
+            self.show_canvas_border = !self.show_canvas_border;
+        } else if clicked {
+            self.current_tab = ViewerTab::Viewer;
+        }
+
+        // Content area (directly after header, no extra spacing)
+        match self.current_tab {
+            ViewerTab::Viewer => self.show_canvas_no_gpu(ui, state),
+            ViewerTab::Data => {
+                self.show_data_view(ui, state);
+                HandleResult::None
+            }
+        }
+    }
+
+    /// Show the canvas viewer (GPU-enabled version).
+    #[cfg(feature = "gpu-rendering")]
+    fn show_canvas(&mut self, ui: &mut egui::Ui, state: &AppState, render_state: Option<&RenderState>) -> HandleResult {
         use crate::handles::{screen_to_world, FourPointDragState};
 
         // Initialize digit cache if needed
@@ -492,52 +613,241 @@ impl ViewerPane {
         }
 
         // Draw all geometry (using GPU or CPU rendering)
-        #[cfg(feature = "gpu-rendering")]
-        {
-            if self.use_gpu_rendering && self.vello_viewer.is_available() {
-                // Compute geometry hash for cache invalidation
-                let geometry_hash = Self::hash_geometry(&state.geometry);
+        // GPU rendering requires render_state to be available
+        let use_gpu = render_state.is_some() && self.use_gpu_rendering && self.vello_viewer.is_available();
 
-                // Set background color (Vello will render the background)
-                self.vello_viewer.set_background_color(state.background_color);
+        if use_gpu {
+            let render_state = render_state.unwrap();
 
-                // Render with Vello - pass pan, zoom, and geometry hash
-                // The VelloViewer handles transform calculation and cache invalidation internally
-                self.vello_viewer.render(
-                    ui,
-                    &state.geometry,
-                    self.pan_zoom.pan,
-                    self.pan_zoom.zoom,
-                    rect,
-                    geometry_hash,
-                );
+            // Compute geometry hash for cache invalidation
+            let geometry_hash = Self::hash_geometry(&state.geometry);
 
-                // Draw points overlay if enabled (still use egui for this)
-                if self.show_points {
-                    for path in &state.geometry {
-                        self.draw_points(&painter, path, center);
-                    }
-                }
-            } else {
-                // Fallback to CPU rendering
+            // Set background color (Vello will render the background)
+            self.vello_viewer.set_background_color(state.background_color);
+
+            // Render with Vello using shared wgpu device
+            self.vello_viewer.render(
+                render_state,
+                ui,
+                &state.geometry,
+                self.pan_zoom.pan,
+                self.pan_zoom.zoom,
+                rect,
+                geometry_hash,
+            );
+
+            // Draw points overlay if enabled (still use egui for this)
+            if self.show_points {
                 for path in &state.geometry {
-                    self.draw_path(&painter, path, center);
-
-                    if self.show_points {
-                        self.draw_points(&painter, path, center);
-                    }
+                    self.draw_points(&painter, path, center);
                 }
             }
-        }
-
-        #[cfg(not(feature = "gpu-rendering"))]
-        {
+        } else {
+            // Fallback to CPU rendering
             for path in &state.geometry {
                 self.draw_path(&painter, path, center);
 
                 if self.show_points {
                     self.draw_points(&painter, path, center);
                 }
+            }
+        }
+
+        // Draw origin crosshair
+        if self.show_origin {
+            let origin = self.pan_zoom.world_to_screen(Pos2::ZERO, center);
+            if rect.contains(origin) {
+                let crosshair_size = 10.0;
+                painter.line_segment(
+                    [
+                        origin - Vec2::new(crosshair_size, 0.0),
+                        origin + Vec2::new(crosshair_size, 0.0),
+                    ],
+                    Stroke::new(1.0, theme::VIEWER_CROSSHAIR),
+                );
+                painter.line_segment(
+                    [
+                        origin - Vec2::new(0.0, crosshair_size),
+                        origin + Vec2::new(0.0, crosshair_size),
+                    ],
+                    Stroke::new(1.0, theme::VIEWER_CROSSHAIR),
+                );
+            }
+        }
+
+        // Draw and handle interactive handles
+        if self.show_handles {
+            if let Some(ref handles) = self.handles {
+                handles.draw(&painter, self.pan_zoom.zoom, self.pan_zoom.pan, center);
+            }
+            if let Some(ref handle) = self.four_point_handle {
+                handle.draw(&painter, self.pan_zoom.zoom, self.pan_zoom.pan, center);
+            }
+        }
+
+        // Draw point numbers on top of everything (including handles)
+        if self.show_point_numbers {
+            for path in &state.geometry {
+                self.draw_point_numbers(&painter, path, center);
+            }
+        }
+
+        // Handle interactions (only if not panning)
+        if !self.is_space_pressed && self.show_handles {
+            let mouse_pos = ui.input(|i| i.pointer.hover_pos());
+
+            // Handle FourPointHandle first (takes priority)
+            if let Some(ref mut four_point) = self.four_point_handle {
+                // Check for drag start
+                if response.drag_started_by(egui::PointerButton::Primary) {
+                    if let Some(pos) = mouse_pos {
+                        if let Some(hit_state) = four_point.hit_test(pos, self.pan_zoom.zoom, self.pan_zoom.pan, center) {
+                            let world_pos = screen_to_world(pos, self.pan_zoom.zoom, self.pan_zoom.pan, center);
+                            four_point.start_drag(hit_state, world_pos);
+                        }
+                    }
+                }
+
+                // Handle dragging
+                if four_point.is_dragging() {
+                    if response.drag_stopped_by(egui::PointerButton::Primary) {
+                        // Drag ended - return final values
+                        let (x, y, width, height) = four_point.end_drag();
+                        return HandleResult::FourPointChange { x, y, width, height };
+                    } else if response.dragged_by(egui::PointerButton::Primary) {
+                        // Still dragging - update and return current values for live preview
+                        if let Some(pos) = mouse_pos {
+                            let world_pos = screen_to_world(pos, self.pan_zoom.zoom, self.pan_zoom.pan, center);
+                            four_point.update_drag(world_pos);
+                        }
+                        // Return current values to trigger re-render
+                        return HandleResult::FourPointChange {
+                            x: four_point.center.x,
+                            y: four_point.center.y,
+                            width: four_point.width,
+                            height: four_point.height,
+                        };
+                    }
+                }
+
+                // If FourPointHandle is dragging, don't process regular handles
+                if four_point.drag_state != FourPointDragState::None {
+                    return HandleResult::None;
+                }
+            }
+
+            // Check for regular handle dragging
+            if let Some(ref mut handles) = self.handles {
+                // Check for drag start
+                if response.drag_started_by(egui::PointerButton::Primary) {
+                    if let Some(pos) = mouse_pos {
+                        if let Some(idx) = handles.hit_test(pos, self.pan_zoom.zoom, self.pan_zoom.pan, center) {
+                            self.dragging_handle = Some(idx);
+                            if let Some(handle) = handles.handles_mut().get_mut(idx) {
+                                handle.dragging = true;
+                            }
+                        }
+                    }
+                }
+
+                // Handle dragging
+                if let Some(idx) = self.dragging_handle {
+                    if response.drag_stopped_by(egui::PointerButton::Primary) {
+                        // Drag ended
+                        if let Some(handle) = handles.handles_mut().get_mut(idx) {
+                            handle.dragging = false;
+                            let param_name = handle.param_name.clone();
+                            let position = handle.position;
+                            self.dragging_handle = None;
+                            return HandleResult::PointChange { param: param_name, value: position };
+                        }
+                        self.dragging_handle = None;
+                    } else if response.dragged_by(egui::PointerButton::Primary) {
+                        // Still dragging - update and return current values for live preview
+                        if let Some(pos) = mouse_pos {
+                            handles.update_handle_position(idx, pos, self.pan_zoom.zoom, self.pan_zoom.pan, center);
+                        }
+                        // Return current values to trigger re-render
+                        if let Some(handle) = handles.handles().get(idx) {
+                            return HandleResult::PointChange {
+                                param: handle.param_name.clone(),
+                                value: handle.position,
+                            };
+                        }
+                    }
+                }
+            }
+        }
+
+        HandleResult::None
+    }
+
+    /// Show the canvas viewer (non-GPU version).
+    #[cfg(not(feature = "gpu-rendering"))]
+    fn show_canvas_no_gpu(&mut self, ui: &mut egui::Ui, state: &AppState) -> HandleResult {
+        use crate::handles::{screen_to_world, FourPointDragState};
+
+        // Initialize digit cache if needed
+        self.digit_cache.ensure_initialized(ui.ctx());
+
+        let (response, painter) =
+            ui.allocate_painter(ui.available_size(), egui::Sense::click_and_drag());
+
+        let rect = response.rect;
+        let center = rect.center().to_vec2();
+
+        // Handle zoom with scroll wheel, centered on mouse position
+        self.pan_zoom.handle_scroll_zoom(rect, ui, center);
+
+        // Track space bar state for Photoshop-style panning
+        if ui.input(|i| i.key_pressed(egui::Key::Space)) {
+            self.is_space_pressed = true;
+        }
+        if ui.input(|i| i.key_released(egui::Key::Space)) {
+            self.is_space_pressed = false;
+            self.is_panning = false;
+        }
+
+        // Handle panning with space+drag, middle mouse button, or right drag
+        let is_panning = self.is_space_pressed && response.dragged_by(egui::PointerButton::Primary);
+        if is_panning {
+            self.pan_zoom.pan += response.drag_delta();
+            self.is_panning = true;
+        }
+        self.pan_zoom.handle_drag_pan(&response, egui::PointerButton::Middle);
+        self.pan_zoom.handle_drag_pan(&response, egui::PointerButton::Secondary);
+
+        // Change cursor when space is held (panning mode)
+        if self.is_space_pressed && response.hovered() {
+            if self.is_panning {
+                ui.ctx().set_cursor_icon(egui::CursorIcon::Grabbing);
+            } else {
+                ui.ctx().set_cursor_icon(egui::CursorIcon::Grab);
+            }
+        }
+
+        // Draw background
+        let bg_color = egui::Color32::from_rgb(
+            (state.background_color.r * 255.0) as u8,
+            (state.background_color.g * 255.0) as u8,
+            (state.background_color.b * 255.0) as u8,
+        );
+        painter.rect_filled(rect, 0.0, bg_color);
+
+        // Draw a subtle grid
+        self.draw_grid(&painter, rect);
+
+        // Draw canvas border (uses document width/height)
+        if self.show_canvas_border {
+            self.draw_canvas_border(&painter, center, state.library.width(), state.library.height());
+        }
+
+        // CPU rendering only
+        for path in &state.geometry {
+            self.draw_path(&painter, path, center);
+
+            if self.show_points {
+                self.draw_points(&painter, path, center);
             }
         }
 
@@ -725,7 +1035,7 @@ impl ViewerPane {
 
         // Draw border with constant 1px line width (screen space)
         let border_color = Color32::from_rgba_unmultiplied(128, 128, 128, 180);
-        painter.rect_stroke(canvas_rect, 0.0, Stroke::new(1.0, border_color));
+        painter.rect_stroke(canvas_rect, 0.0, Stroke::new(1.0, border_color), egui::StrokeKind::Inside);
     }
 
     /// Draw a background grid.

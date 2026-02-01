@@ -275,11 +275,11 @@ impl NodeSelectionDialog {
         });
 
         // Modal window - clean Figma-like styling
-        let dialog_frame = egui::Frame::none()
+        let dialog_frame = egui::Frame::NONE
             .fill(theme::PANEL_BG)
             .stroke(egui::Stroke::new(1.0, theme::BORDER_COLOR))
-            .rounding(egui::Rounding::same(theme::CORNER_RADIUS))
-            .inner_margin(egui::Margin::same(0.0));
+            .corner_radius(egui::CornerRadius::same(theme::CORNER_RADIUS as u8))
+            .inner_margin(egui::Margin::same(0));
 
         egui::Window::new("Add Node")
             .collapsible(false)

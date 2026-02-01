@@ -3,11 +3,11 @@
 //! This module provides a viewer widget that uses Vello for GPU rendering
 //! and displays the result in egui.
 //!
-//! Due to wgpu version differences between egui-wgpu and vello, we use a
-//! texture-copy approach: Vello renders to its own GPU texture, copies to
-//! a CPU buffer, then uploads to egui as a texture.
+//! With egui 0.33+ and vello 0.7+, both use wgpu 27, allowing us to share
+//! the GPU device and textures directly without CPU copies.
 
-use eframe::egui::{self, ColorImage, TextureHandle, TextureOptions};
+use eframe::egui;
+use egui_wgpu::RenderState;
 use nodebox_core::geometry::{Color, Path};
 use vello::kurbo::Affine;
 use vello::peniko::Color as PenikoColor;
@@ -19,26 +19,17 @@ use crate::vello_convert::convert_paths;
 /// Error type for Vello viewer operations.
 #[derive(Debug)]
 pub enum VelloViewerError {
-    /// Failed to create wgpu adapter.
-    AdapterCreation,
-    /// Failed to create wgpu device.
-    DeviceCreation(String),
     /// Failed to create Vello renderer.
     RendererCreation(String),
     /// Failed to render.
     RenderFailed(String),
-    /// Failed to copy texture to buffer.
-    BufferCopyFailed(String),
 }
 
 impl std::fmt::Display for VelloViewerError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            VelloViewerError::AdapterCreation => write!(f, "Failed to create wgpu adapter"),
-            VelloViewerError::DeviceCreation(e) => write!(f, "Failed to create device: {}", e),
             VelloViewerError::RendererCreation(e) => write!(f, "Failed to create renderer: {}", e),
             VelloViewerError::RenderFailed(e) => write!(f, "Render failed: {}", e),
-            VelloViewerError::BufferCopyFailed(e) => write!(f, "Buffer copy failed: {}", e),
         }
     }
 }
@@ -46,25 +37,31 @@ impl std::fmt::Display for VelloViewerError {
 impl std::error::Error for VelloViewerError {}
 
 /// Cached GPU resources for a specific texture size.
-struct CachedResources {
-    /// Width of the cached resources.
+struct CachedTexture {
+    /// Width of the cached texture.
     width: u32,
-    /// Height of the cached resources.
+    /// Height of the cached texture.
     height: u32,
-    /// Render target texture.
-    render_texture: wgpu::Texture,
+    /// Render target texture (shared with egui).
+    /// Note: We keep the texture alive so the view remains valid.
+    #[allow(dead_code)]
+    texture: wgpu::Texture,
     /// Render target texture view.
-    render_view: wgpu::TextureView,
-    /// Staging buffer for readback.
-    staging_buffer: wgpu::Buffer,
-    /// Bytes per row (aligned to 256).
-    bytes_per_row: u32,
+    texture_view: wgpu::TextureView,
+    /// egui texture ID for displaying this texture.
+    egui_texture_id: egui::TextureId,
 }
 
-impl CachedResources {
-    fn new(device: &wgpu::Device, width: u32, height: u32) -> Self {
-        let render_texture = device.create_texture(&wgpu::TextureDescriptor {
-            label: Some("vello_render_target"),
+impl CachedTexture {
+    fn new(
+        device: &wgpu::Device,
+        renderer: &mut egui_wgpu::Renderer,
+        width: u32,
+        height: u32,
+    ) -> Self {
+        // Create texture with both STORAGE_BINDING (for Vello) and TEXTURE_BINDING (for egui)
+        let texture = device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("vello_shared_texture"),
             size: wgpu::Extent3d {
                 width,
                 height,
@@ -75,97 +72,32 @@ impl CachedResources {
             dimension: wgpu::TextureDimension::D2,
             format: wgpu::TextureFormat::Rgba8Unorm,
             usage: wgpu::TextureUsages::STORAGE_BINDING
-                | wgpu::TextureUsages::COPY_SRC
-                | wgpu::TextureUsages::TEXTURE_BINDING,
+                | wgpu::TextureUsages::TEXTURE_BINDING
+                | wgpu::TextureUsages::COPY_DST,
             view_formats: &[],
         });
 
-        let render_view = render_texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let texture_view = texture.create_view(&wgpu::TextureViewDescriptor::default());
 
-        let bytes_per_row = (width * 4 + 255) & !255; // Align to 256 bytes
-        let buffer_size = (bytes_per_row * height) as u64;
+        // Register this texture with egui so it can display it directly
+        let egui_texture_id = renderer.register_native_texture(
+            device,
+            &texture_view,
+            wgpu::FilterMode::Linear,
+        );
 
-        let staging_buffer = device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("vello_staging_buffer"),
-            size: buffer_size,
-            usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-            mapped_at_creation: false,
-        });
-
-        CachedResources {
+        CachedTexture {
             width,
             height,
-            render_texture,
-            render_view,
-            staging_buffer,
-            bytes_per_row,
+            texture,
+            texture_view,
+            egui_texture_id,
         }
     }
 
     fn matches_size(&self, width: u32, height: u32) -> bool {
         self.width == width && self.height == height
     }
-}
-
-/// GPU context for Vello rendering.
-///
-/// This maintains its own wgpu instance separate from egui's to avoid
-/// version conflicts.
-struct VelloGpuContext {
-    device: wgpu::Device,
-    queue: wgpu::Queue,
-    renderer: Renderer,
-    /// Cached GPU resources (texture + staging buffer).
-    cached_resources: Option<CachedResources>,
-}
-
-impl VelloGpuContext {
-    /// Create a new GPU context for Vello.
-    fn new() -> Result<Self, VelloViewerError> {
-        // Create wgpu instance
-        let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor {
-            backends: wgpu::Backends::all(),
-            ..Default::default()
-        });
-
-        // Request adapter
-        let adapter = pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
-            power_preference: wgpu::PowerPreference::HighPerformance,
-            compatible_surface: None,
-            force_fallback_adapter: false,
-        }))
-        .map_err(|_| VelloViewerError::AdapterCreation)?;
-
-        // Request device
-        let (device, queue) = pollster::block_on(adapter.request_device(
-            &wgpu::DeviceDescriptor {
-                label: Some("vello_device"),
-                required_features: wgpu::Features::empty(),
-                required_limits: wgpu::Limits::default(),
-                memory_hints: Default::default(),
-                trace: wgpu::Trace::Off,
-                ..Default::default()
-            },
-        ))
-        .map_err(|e| VelloViewerError::DeviceCreation(e.to_string()))?;
-
-        // Create Vello renderer
-        let renderer = Renderer::new(
-            &device,
-            RendererOptions {
-                ..Default::default()
-            },
-        )
-        .map_err(|e| VelloViewerError::RendererCreation(format!("{:?}", e)))?;
-
-        Ok(VelloGpuContext {
-            device,
-            queue,
-            renderer,
-            cached_resources: None,
-        })
-    }
-
 }
 
 /// Cache key for determining when to re-render.
@@ -175,7 +107,7 @@ struct CacheKey {
     height: u32,
     pan_x: i32, // Stored as fixed-point to avoid float comparison issues
     pan_y: i32,
-    zoom: i32,        // Stored as fixed-point (zoom * 1000)
+    zoom: i32,         // Stored as fixed-point (zoom * 1000)
     geometry_hash: u64,
     scale_factor: i32, // pixels_per_point * 100
 }
@@ -203,12 +135,14 @@ impl CacheKey {
 }
 
 /// Vello-based viewer for GPU-accelerated vector rendering.
+///
+/// Uses egui's wgpu device directly for zero-copy texture sharing.
 pub struct VelloViewer {
-    /// GPU context (lazily initialized).
-    gpu_ctx: Option<VelloGpuContext>,
-    /// Cached egui texture for display.
-    texture: Option<TextureHandle>,
-    /// Cache key for the current texture.
+    /// Vello renderer (lazily initialized with egui's device).
+    renderer: Option<Renderer>,
+    /// Cached GPU texture (shared with egui).
+    cached_texture: Option<CachedTexture>,
+    /// Cache key for the current render.
     cache_key: Option<CacheKey>,
     /// Background color.
     background_color: Color,
@@ -228,8 +162,8 @@ impl VelloViewer {
     /// Create a new Vello viewer.
     pub fn new() -> Self {
         VelloViewer {
-            gpu_ctx: None,
-            texture: None,
+            renderer: None,
+            cached_texture: None,
             cache_key: None,
             background_color: Color::WHITE,
             init_failed: false,
@@ -242,25 +176,25 @@ impl VelloViewer {
         self.background_color = color;
     }
 
-    /// Initialize the GPU context if not already done.
-    fn ensure_initialized(&mut self) -> bool {
+    /// Ensure the Vello renderer is initialized with egui's device.
+    fn ensure_renderer(&mut self, device: &wgpu::Device) -> bool {
         if self.init_failed {
             return false;
         }
 
-        if self.gpu_ctx.is_some() {
+        if self.renderer.is_some() {
             return true;
         }
 
-        match VelloGpuContext::new() {
-            Ok(ctx) => {
-                self.gpu_ctx = Some(ctx);
+        match Renderer::new(device, RendererOptions::default()) {
+            Ok(renderer) => {
+                self.renderer = Some(renderer);
                 true
             }
             Err(e) => {
-                log::error!("Failed to initialize Vello GPU context: {}", e);
+                log::error!("Failed to create Vello renderer: {:?}", e);
                 self.init_failed = true;
-                self.init_error = Some(e.to_string());
+                self.init_error = Some(format!("{:?}", e));
                 false
             }
         }
@@ -311,124 +245,10 @@ impl VelloViewer {
         scene
     }
 
-    /// Render the scene and copy to CPU buffer.
-    fn render_to_image(
-        &mut self,
-        paths: &[Path],
-        transform: Affine,
-        width: u32,
-        height: u32,
-    ) -> Result<ColorImage, VelloViewerError> {
-        // Build scene first (before taking mutable borrow of gpu_ctx)
-        let scene = self.build_scene(paths, transform);
-        let bg = crate::vello_convert::color_to_peniko(&self.background_color);
-
-        let ctx = self
-            .gpu_ctx
-            .as_mut()
-            .ok_or(VelloViewerError::AdapterCreation)?;
-
-        // Get or create cached resources for this size
-        // We need to do this in two steps to satisfy the borrow checker
-        let needs_new_resources = ctx
-            .cached_resources
-            .as_ref()
-            .map(|r| !r.matches_size(width, height))
-            .unwrap_or(true);
-
-        if needs_new_resources {
-            ctx.cached_resources = Some(CachedResources::new(&ctx.device, width, height));
-        }
-
-        let resources = ctx.cached_resources.as_ref().unwrap();
-
-        // Render
-        let params = RenderParams {
-            base_color: bg,
-            width,
-            height,
-            antialiasing_method: AaConfig::Msaa16,
-        };
-
-        ctx.renderer
-            .render_to_texture(&ctx.device, &ctx.queue, &scene, &resources.render_view, &params)
-            .map_err(|e| VelloViewerError::RenderFailed(format!("{:?}", e)))?;
-
-        // Copy texture to buffer
-        let mut encoder = ctx
-            .device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                label: Some("vello_copy_encoder"),
-            });
-
-        encoder.copy_texture_to_buffer(
-            wgpu::TexelCopyTextureInfo {
-                texture: &resources.render_texture,
-                mip_level: 0,
-                origin: wgpu::Origin3d::ZERO,
-                aspect: wgpu::TextureAspect::All,
-            },
-            wgpu::TexelCopyBufferInfo {
-                buffer: &resources.staging_buffer,
-                layout: wgpu::TexelCopyBufferLayout {
-                    offset: 0,
-                    bytes_per_row: Some(resources.bytes_per_row),
-                    rows_per_image: Some(height),
-                },
-            },
-            wgpu::Extent3d {
-                width,
-                height,
-                depth_or_array_layers: 1,
-            },
-        );
-
-        ctx.queue.submit(std::iter::once(encoder.finish()));
-
-        // Map buffer and read data
-        let buffer_slice = resources.staging_buffer.slice(..);
-        let (sender, receiver) = std::sync::mpsc::channel();
-        buffer_slice.map_async(wgpu::MapMode::Read, move |result| {
-            let _ = sender.send(result);
-        });
-
-        ctx.device.poll(wgpu::PollType::wait_indefinitely()).ok();
-
-        receiver
-            .recv()
-            .map_err(|_| VelloViewerError::BufferCopyFailed("Channel closed".to_string()))?
-            .map_err(|e| VelloViewerError::BufferCopyFailed(e.to_string()))?;
-
-        // Read pixel data
-        let data = buffer_slice.get_mapped_range();
-        let bytes_per_row = resources.bytes_per_row;
-        let mut pixels = Vec::with_capacity((width * height) as usize);
-
-        for y in 0..height {
-            let row_start = (y * bytes_per_row) as usize;
-            for x in 0..width {
-                let offset = row_start + (x * 4) as usize;
-                pixels.push(egui::Color32::from_rgba_unmultiplied(
-                    data[offset],
-                    data[offset + 1],
-                    data[offset + 2],
-                    data[offset + 3],
-                ));
-            }
-        }
-
-        drop(data);
-        resources.staging_buffer.unmap();
-
-        Ok(ColorImage {
-            size: [width as usize, height as usize],
-            pixels,
-        })
-    }
-
-    /// Render and display in egui.
+    /// Render and display in egui using the shared wgpu device.
     ///
     /// Parameters:
+    /// - `render_state`: egui's wgpu render state (provides device/queue)
     /// - `ui`: The egui UI context
     /// - `paths`: The geometry to render
     /// - `pan`: Pan offset in logical pixels
@@ -439,6 +259,7 @@ impl VelloViewer {
     /// Returns true if GPU rendering was used, false if fallback is needed.
     pub fn render(
         &mut self,
+        render_state: &RenderState,
         ui: &mut egui::Ui,
         paths: &[Path],
         pan: egui::Vec2,
@@ -446,6 +267,9 @@ impl VelloViewer {
         rect: egui::Rect,
         geometry_hash: u64,
     ) -> bool {
+        let device = &render_state.device;
+        let queue = &render_state.queue;
+
         // Get scale factor for HiDPI support
         let scale_factor = ui.ctx().pixels_per_point();
 
@@ -468,8 +292,8 @@ impl VelloViewer {
         let needs_render = self.cache_key.as_ref() != Some(&new_cache_key);
 
         if needs_render {
-            if !self.ensure_initialized() {
-                // Show error message
+            // Ensure Vello renderer is initialized
+            if !self.ensure_renderer(device) {
                 if let Some(ref err) = self.init_error {
                     ui.painter().rect_filled(
                         rect,
@@ -487,42 +311,74 @@ impl VelloViewer {
                 return false;
             }
 
+            // Get or create cached texture for this size
+            let needs_new_texture = self
+                .cached_texture
+                .as_ref()
+                .map(|t| !t.matches_size(physical_width, physical_height))
+                .unwrap_or(true);
+
+            if needs_new_texture {
+                // Unregister old texture if exists
+                if let Some(old_texture) = self.cached_texture.take() {
+                    render_state
+                        .renderer
+                        .write()
+                        .free_texture(&old_texture.egui_texture_id);
+                }
+
+                // Create new shared texture
+                self.cached_texture = Some(CachedTexture::new(
+                    device,
+                    &mut render_state.renderer.write(),
+                    physical_width,
+                    physical_height,
+                ));
+            }
+
+            let cached_texture = self.cached_texture.as_ref().unwrap();
+
             // Build transform in texture-local coordinates
-            // The texture center is at (physical_width/2, physical_height/2)
-            // Pan and zoom are applied relative to this center
             let center_x = physical_width as f64 / 2.0;
             let center_y = physical_height as f64 / 2.0;
-
-            // Scale pan by scale_factor since we're rendering at physical resolution
             let scaled_pan_x = pan.x as f64 * scale_factor as f64;
             let scaled_pan_y = pan.y as f64 * scale_factor as f64;
-
-            // Scale zoom by scale_factor to match physical pixels
             let physical_zoom = zoom as f64 * scale_factor as f64;
 
             let transform = Affine::translate((center_x + scaled_pan_x, center_y + scaled_pan_y))
                 * Affine::scale(physical_zoom);
 
-            match self.render_to_image(paths, transform, physical_width, physical_height) {
-                Ok(image) => {
-                    self.texture = Some(ui.ctx().load_texture(
-                        "vello_output",
-                        image,
-                        TextureOptions::LINEAR,
-                    ));
-                    self.cache_key = Some(new_cache_key);
-                }
-                Err(e) => {
-                    log::error!("Vello render failed: {}", e);
-                    return false;
-                }
+            // Build scene
+            let scene = self.build_scene(paths, transform);
+            let bg = crate::vello_convert::color_to_peniko(&self.background_color);
+
+            // Render with Vello directly to the shared texture
+            let params = RenderParams {
+                base_color: bg,
+                width: physical_width,
+                height: physical_height,
+                antialiasing_method: AaConfig::Msaa16,
+            };
+
+            let renderer = self.renderer.as_mut().unwrap();
+            if let Err(e) = renderer.render_to_texture(
+                device,
+                queue,
+                &scene,
+                &cached_texture.texture_view,
+                &params,
+            ) {
+                log::error!("Vello render failed: {:?}", e);
+                return false;
             }
+
+            self.cache_key = Some(new_cache_key);
         }
 
-        // Display the texture
-        if let Some(ref texture) = self.texture {
+        // Display the texture directly (no CPU copy needed!)
+        if let Some(ref cached_texture) = self.cached_texture {
             ui.painter().image(
-                texture.id(),
+                cached_texture.egui_texture_id,
                 rect,
                 egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)),
                 egui::Color32::WHITE,
@@ -551,7 +407,7 @@ mod tests {
     #[test]
     fn test_vello_viewer_new() {
         let viewer = VelloViewer::new();
-        assert!(viewer.gpu_ctx.is_none());
+        assert!(viewer.renderer.is_none());
         assert!(!viewer.init_failed);
     }
 

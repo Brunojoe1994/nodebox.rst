@@ -12,8 +12,8 @@ Node Evaluation → Path/Contour Geometry → egui Painter → tiny-skia (CPU) �
 ```
 
 ### Current Dependencies
-- **egui 0.30** - Immediate-mode UI framework
-- **eframe 0.30** - Native window integration
+- **egui 0.33** - Immediate-mode UI framework
+- **eframe 0.33** - Native window integration (uses wgpu 27)
 - **tiny-skia 0.11** - CPU-based vector rasterizer
 - **pathfinder_geometry** - Geometry primitives (used in nodebox-core)
 
@@ -292,24 +292,54 @@ Before proceeding, confirm:
 ---
 
 *Plan created: 2026-02-01*
-*Status: Phase 1 & 2 Complete*
+*Status: Unified wgpu Phase Complete (Phase 1-3)*
 
 ## Implementation Progress
 
 ### Phase 1: Foundation ✅ Complete
-- Added vello 0.7 workspace dependency
+- Added vello 0.7 workspace dependency (uses wgpu 27)
 - Created `vello_convert.rs` - geometry conversion (Path → kurbo BezPath)
 - Created `vello_renderer.rs` - Vello wrapper and ViewTransform
 - Added `gpu-rendering` feature flag (off by default)
 
 ### Phase 2: Vello Viewer Widget ✅ Complete
 - Created `vello_viewer.rs` with VelloViewer widget
-- Manages separate wgpu context (handles version mismatch with egui-wgpu)
-- Texture-copy approach: GPU render → CPU buffer → egui texture
-- Integrated into ViewerPane with runtime toggle
-- Automatic fallback to CPU rendering if GPU unavailable
+- Initial implementation with texture-copy approach (separate wgpu context)
+
+### Phase 2.5: Unified wgpu ✅ Complete (2026-02-01)
+**Major Performance Improvement**
+
+Previously, egui-wgpu 0.30 used wgpu 23, while vello 0.7 used wgpu 27, requiring:
+- Separate wgpu device for Vello
+- GPU → CPU → GPU texture copying (slow!)
+
+**Solution: Upgraded to egui 0.33 (egui-wgpu now uses wgpu 27)**
+
+Changes:
+- Updated egui/eframe/egui-wgpu from 0.30 to 0.33
+- Fixed breaking API changes (Rounding→CornerRadius, Margin::same takes i8, etc.)
+- Rewrote VelloViewer to use `egui_wgpu::RenderState`
+- Vello now renders directly to egui-registered textures
+- **Zero-copy texture sharing** - massive performance improvement
+
+Architecture:
+```
+VelloViewer ──┬─> Vello Renderer ──> Shared wgpu Texture
+              │
+              └─> egui (via RenderState.device/queue)
+```
+
+### Phase 3: Feature Parity (In Progress)
+- [x] Basic geometry rendering
+- [x] Fill and stroke support
+- [x] Pan/zoom transform
+- [x] Cache invalidation via geometry hash
+- [ ] Grid rendering in Vello
+- [ ] Origin crosshair in Vello
+- [ ] Canvas border in Vello
+- [ ] Point markers in Vello
+- Handles remain in egui (need interaction layer)
 
 ### Remaining Phases
-- Phase 3: Feature Parity (grid, handles in Vello)
 - Phase 4: Optimization (scene caching, incremental rendering)
 - Phase 5: Advanced Features (gradients, blur, blend modes)
