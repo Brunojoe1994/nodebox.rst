@@ -339,18 +339,21 @@ impl eframe::App for NodeBoxApp {
             ctx.request_repaint();
         }
 
-        // 1. Menu bar (top-most)
-        egui::TopBottomPanel::top("menu_bar").show(ctx, |ui| {
-            self.show_menu_bar(ui, ctx);
-        });
+        // 1. Menu bar (top-most) - clean frame, no extra borders
+        egui::TopBottomPanel::top("menu_bar")
+            .frame(egui::Frame::none().fill(theme::PANEL_BG))
+            .show(ctx, |ui| {
+                self.show_menu_bar(ui, ctx);
+            });
 
-        // 2. Address bar (below menu)
+        // 2. Address bar (below menu) - frameless, handles its own styling
         egui::TopBottomPanel::top("address_bar")
             .exact_height(theme::ADDRESS_BAR_HEIGHT)
+            .frame(egui::Frame::none())
             .show(ctx, |ui| {
                 // Update address bar message with current state
                 let node_count = self.state.library.root.children.len();
-                let msg = format!("Nodes: {} | Zoom: {:.0}%", node_count, self.viewer_pane.zoom() * 100.0);
+                let msg = format!("{} nodes · {:.0}%", node_count, self.viewer_pane.zoom() * 100.0);
                 self.address_bar.set_message(msg);
 
                 if let Some(_clicked_path) = self.address_bar.show(ui) {
@@ -358,9 +361,10 @@ impl eframe::App for NodeBoxApp {
                 }
             });
 
-        // 3. Animation bar (bottom)
+        // 3. Animation bar (bottom) - frameless, handles its own styling
         egui::TopBottomPanel::bottom("animation_bar")
             .exact_height(theme::ANIMATION_BAR_HEIGHT)
+            .frame(egui::Frame::none())
             .show(ctx, |ui| {
                 let _event = self.animation_bar.show(ui);
             });
@@ -376,7 +380,11 @@ impl eframe::App for NodeBoxApp {
             .default_width(450.0)
             .min_width(300.0)
             .resizable(true)
+            .frame(egui::Frame::none().fill(theme::PANEL_BG))
             .show(ctx, |ui| {
+                // Remove default spacing to have tighter control
+                ui.spacing_mut().item_spacing = egui::vec2(0.0, 0.0);
+
                 let available = ui.available_rect_before_wrap();
                 let split_ratio = 0.35; // 35% parameters, 65% network
                 let split_y = available.height() * split_ratio;
@@ -384,33 +392,24 @@ impl eframe::App for NodeBoxApp {
                 // Top: Parameters pane
                 let params_rect = Rect::from_min_size(
                     available.min,
-                    Vec2::new(available.width(), split_y - 1.0),
+                    Vec2::new(available.width(), split_y),
                 );
 
                 ui.allocate_new_ui(egui::UiBuilder::new().max_rect(params_rect), |ui| {
                     ui.set_clip_rect(params_rect);
-                    ui.add_space(4.0);
-                    ui.horizontal(|ui| {
-                        ui.add_space(8.0);
-                        ui.label(
-                            egui::RichText::new("PARAMETERS")
-                                .color(theme::TEXT_DISABLED)
-                                .size(10.0),
-                        );
-                    });
-                    ui.add_space(2.0);
-                    ui.separator();
+                    // Consistent section header
+                    Self::show_section_header(ui, "PARAMETERS", None::<fn(&mut egui::Ui)>);
                     self.parameters.show(ui, &mut self.state);
                 });
 
-                // Separator line
+                // Single clean separator between sections
                 let sep_y = available.min.y + split_y;
                 ui.painter().line_segment(
                     [
                         Pos2::new(available.min.x, sep_y),
                         Pos2::new(available.max.x, sep_y),
                     ],
-                    egui::Stroke::new(1.0, theme::DARK_BACKGROUND),
+                    egui::Stroke::new(1.0, theme::BORDER_COLOR),
                 );
 
                 // Bottom: Network pane
@@ -421,16 +420,21 @@ impl eframe::App for NodeBoxApp {
 
                 ui.allocate_new_ui(egui::UiBuilder::new().max_rect(network_rect), |ui| {
                     ui.set_clip_rect(network_rect);
-                    // Network header
+                    // Consistent section header with action button
+                    Self::show_section_header(ui, "NETWORK", Some(|ui: &mut egui::Ui| {
+                        // We need to handle the button click outside
+                    }));
+
+                    // Action button row
                     ui.horizontal(|ui| {
-                        ui.label("Network");
+                        ui.add_space(theme::PADDING);
                         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                            if ui.button("+ New Node").clicked() {
+                            ui.add_space(theme::PADDING);
+                            if ui.small_button("+").on_hover_text("Add Node").clicked() {
                                 self.node_dialog.open(Point::new(0.0, 0.0));
                             }
                         });
                     });
-                    ui.separator();
 
                     // Network view
                     let action = self.network_view.show(ui, &mut self.state.library);
@@ -453,25 +457,27 @@ impl eframe::App for NodeBoxApp {
                 });
             });
 
-        // 5. Central panel: Viewer (left side, takes remaining space)
-        egui::CentralPanel::default().show(ctx, |ui| {
-            // Update handles for selected node
-            self.viewer_pane.update_handles_for_node(
-                self.state.selected_node.as_deref(),
-                &self.state,
-            );
+        // 5. Central panel: Viewer (left side, takes remaining space) - clean frame
+        egui::CentralPanel::default()
+            .frame(egui::Frame::none().fill(theme::PANEL_BG))
+            .show(ctx, |ui| {
+                // Update handles for selected node
+                self.viewer_pane.update_handles_for_node(
+                    self.state.selected_node.as_deref(),
+                    &self.state,
+                );
 
-            // Show viewer and handle interactions
-            match self.viewer_pane.show(ui, &self.state) {
-                HandleResult::PointChange { param, value } => {
-                    self.handle_parameter_change(&param, value);
+                // Show viewer and handle interactions
+                match self.viewer_pane.show(ui, &self.state) {
+                    HandleResult::PointChange { param, value } => {
+                        self.handle_parameter_change(&param, value);
+                    }
+                    HandleResult::FourPointChange { x, y, width, height } => {
+                        self.handle_four_point_change(x, y, width, height);
+                    }
+                    HandleResult::None => {}
                 }
-                HandleResult::FourPointChange { x, y, width, height } => {
-                    self.handle_four_point_change(x, y, width, height);
-                }
-                HandleResult::None => {}
-            }
-        });
+            });
 
         // 6. Node selection dialog
         if self.node_dialog.visible {
@@ -534,6 +540,35 @@ impl eframe::App for NodeBoxApp {
 }
 
 impl NodeBoxApp {
+    /// Show a consistent section header (Figma-style).
+    fn show_section_header<F: FnOnce(&mut egui::Ui)>(ui: &mut egui::Ui, title: &str, _action: Option<F>) {
+        let header_height = theme::PANE_HEADER_HEIGHT;
+        let header_rect = egui::Rect::from_min_size(
+            ui.cursor().min,
+            egui::vec2(ui.available_width(), header_height),
+        );
+
+        // Draw header background
+        ui.painter().rect_filled(
+            header_rect,
+            0.0,
+            theme::HEADER_BACKGROUND,
+        );
+
+        ui.allocate_ui_at_rect(header_rect, |ui| {
+            ui.horizontal_centered(|ui| {
+                ui.add_space(theme::PADDING);
+                ui.label(
+                    egui::RichText::new(title)
+                        .color(theme::TEXT_SUBDUED)
+                        .size(10.0),
+                );
+            });
+        });
+
+        ui.add_space(header_height);
+    }
+
     /// Handle FourPointHandle change (rect x, y, width, height).
     fn handle_four_point_change(&mut self, x: f64, y: f64, width: f64, height: f64) {
         if let Some(ref node_name) = self.state.selected_node {

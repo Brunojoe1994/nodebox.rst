@@ -266,45 +266,50 @@ pub fn configure_style(ctx: &egui::Context) {
         ..Default::default()
     };
 
-    // Visuals - Window
+    // Visuals - Window (Figma-style: subtle borders)
     visuals.window_fill = PANEL_BG;
     visuals.window_stroke = Stroke::new(1.0, BORDER_COLOR);
     visuals.window_rounding = Rounding::same(CORNER_RADIUS);
+    visuals.window_shadow = egui::Shadow::NONE; // Figma: no shadows on panels
 
-    // Visuals - Panel
+    // Visuals - Panel (clean, no extra borders)
     visuals.panel_fill = PANEL_BG;
     visuals.faint_bg_color = GRAY_150;
     visuals.extreme_bg_color = GRAY_100;
 
-    // Visuals - Widgets
+    // Visuals - Widgets (subtle, Figma-like)
     visuals.widgets.noninteractive.bg_fill = WIDGET_NONINTERACTIVE_BG;
     visuals.widgets.noninteractive.fg_stroke = Stroke::new(1.0, TEXT_SUBDUED);
     visuals.widgets.noninteractive.rounding = Rounding::same(CORNER_RADIUS_SMALL);
+    visuals.widgets.noninteractive.bg_stroke = Stroke::NONE; // Clean look
 
     visuals.widgets.inactive.bg_fill = WIDGET_INACTIVE_BG;
     visuals.widgets.inactive.fg_stroke = Stroke::new(1.0, TEXT_DEFAULT);
     visuals.widgets.inactive.rounding = Rounding::same(CORNER_RADIUS_SMALL);
+    visuals.widgets.inactive.bg_stroke = Stroke::NONE; // Clean look
 
     visuals.widgets.hovered.bg_fill = WIDGET_HOVERED_BG;
     visuals.widgets.hovered.fg_stroke = Stroke::new(1.0, TEXT_STRONG);
     visuals.widgets.hovered.rounding = Rounding::same(CORNER_RADIUS_SMALL);
-    visuals.widgets.hovered.expansion = 2.0;
+    visuals.widgets.hovered.expansion = 1.0; // Subtle hover expansion (Figma-like)
+    visuals.widgets.hovered.bg_stroke = Stroke::NONE;
 
     visuals.widgets.active.bg_fill = WIDGET_ACTIVE_BG;
     visuals.widgets.active.fg_stroke = Stroke::new(1.0, TEXT_STRONG);
     visuals.widgets.active.rounding = Rounding::same(CORNER_RADIUS_SMALL);
-    visuals.widgets.active.expansion = 2.0;
+    visuals.widgets.active.expansion = 1.0;
+    visuals.widgets.active.bg_stroke = Stroke::NONE;
 
     visuals.widgets.open.bg_fill = WIDGET_ACTIVE_BG;
     visuals.widgets.open.fg_stroke = Stroke::new(1.0, TEXT_STRONG);
     visuals.widgets.open.rounding = Rounding::same(CORNER_RADIUS_SMALL);
 
-    // Selection
+    // Selection (Figma-style: clean selection highlight)
     visuals.selection.bg_fill = SELECTION_BG;
-    visuals.selection.stroke = Stroke::new(2.0, BLUE_400);
+    visuals.selection.stroke = Stroke::new(1.0, BLUE_400); // Thinner selection stroke
 
-    // Separators
-    visuals.widgets.noninteractive.bg_stroke = Stroke::new(1.0, BORDER_COLOR);
+    // Separators - very subtle
+    visuals.widgets.noninteractive.bg_stroke = Stroke::new(1.0, GRAY_200);
 
     // Hyperlinks
     visuals.hyperlink_color = BLUE_500;

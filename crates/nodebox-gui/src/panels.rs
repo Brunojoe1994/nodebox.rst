@@ -65,7 +65,7 @@ impl ParameterPanel {
                 ui.painter().rect_filled(
                     header_rect,
                     0.0,
-                    Color32::from_rgb(75, 75, 75),
+                    theme::HEADER_BACKGROUND,
                 );
                 ui.allocate_ui_at_rect(header_rect, |ui| {
                     ui.horizontal_centered(|ui| {

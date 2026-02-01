@@ -268,32 +268,63 @@ impl ViewerPane {
     /// Show the viewer pane with header tabs and toolbar.
     /// Returns any handle interaction result.
     pub fn show(&mut self, ui: &mut egui::Ui, state: &AppState) -> HandleResult {
-        // Header with tabs and toolbar
-        ui.horizontal(|ui| {
-            // Tabs
-            if ui
-                .selectable_label(self.current_tab == ViewerTab::Viewer, "Viewer")
-                .clicked()
-            {
-                self.current_tab = ViewerTab::Viewer;
-            }
-            if ui
-                .selectable_label(self.current_tab == ViewerTab::Data, "Data")
-                .clicked()
-            {
-                self.current_tab = ViewerTab::Data;
-            }
+        // Tab bar with consistent styling
+        let tab_bar_rect = ui.available_rect_before_wrap();
+        let tab_bar_rect = Rect::from_min_size(
+            tab_bar_rect.min,
+            Vec2::new(tab_bar_rect.width(), theme::PANE_HEADER_HEIGHT),
+        );
 
-            ui.separator();
+        // Draw tab bar background
+        ui.painter().rect_filled(tab_bar_rect, 0.0, theme::TAB_BAR_BG);
 
-            // Toolbar buttons (only show for Viewer tab)
-            if self.current_tab == ViewerTab::Viewer {
-                self.show_toolbar(ui);
-            }
+        ui.allocate_ui_at_rect(tab_bar_rect, |ui| {
+            ui.horizontal_centered(|ui| {
+                ui.add_space(theme::PADDING);
+
+                // Tabs - styled as subtle text buttons
+                let viewer_color = if self.current_tab == ViewerTab::Viewer {
+                    theme::TEXT_STRONG
+                } else {
+                    theme::TEXT_SUBDUED
+                };
+                if ui
+                    .add(egui::Label::new(
+                        egui::RichText::new("Viewer").color(viewer_color).size(11.0),
+                    ).sense(egui::Sense::click()))
+                    .clicked()
+                {
+                    self.current_tab = ViewerTab::Viewer;
+                }
+
+                ui.add_space(theme::PADDING_LARGE);
+
+                let data_color = if self.current_tab == ViewerTab::Data {
+                    theme::TEXT_STRONG
+                } else {
+                    theme::TEXT_SUBDUED
+                };
+                if ui
+                    .add(egui::Label::new(
+                        egui::RichText::new("Data").color(data_color).size(11.0),
+                    ).sense(egui::Sense::click()))
+                    .clicked()
+                {
+                    self.current_tab = ViewerTab::Data;
+                }
+
+                // Spacer and toolbar (only show for Viewer tab)
+                if self.current_tab == ViewerTab::Viewer {
+                    ui.add_space(theme::PADDING_LARGE);
+                    // Subtle vertical separator
+                    ui.add_space(theme::PADDING_SMALL);
+                    self.show_toolbar(ui);
+                }
+            });
         });
-        ui.separator();
+        ui.add_space(theme::PANE_HEADER_HEIGHT);
 
-        // Content area
+        // Content area (no additional separator)
         match self.current_tab {
             ViewerTab::Viewer => self.show_canvas(ui, state),
             ViewerTab::Data => {
@@ -303,48 +334,31 @@ impl ViewerPane {
         }
     }
 
-    /// Show the toolbar buttons.
+    /// Show the toolbar buttons with subtle, Figma-like styling.
     fn show_toolbar(&mut self, ui: &mut egui::Ui) {
-        // Toggle buttons styled as small selectable labels
-        if ui
-            .selectable_label(self.show_handles, "Handles")
-            .on_hover_text("Show/hide handles")
-            .clicked()
-        {
-            self.show_handles = !self.show_handles;
-        }
+        // Helper for subtle toggle buttons
+        let toggle_label = |ui: &mut egui::Ui, label: &str, active: &mut bool, tooltip: &str| {
+            let color = if *active { theme::TEXT_DEFAULT } else { theme::TEXT_DISABLED };
+            let response = ui.add(
+                egui::Label::new(
+                    egui::RichText::new(label).color(color).size(10.0),
+                ).sense(egui::Sense::click())
+            );
+            if response.clicked() {
+                *active = !*active;
+            }
+            response.on_hover_text(tooltip);
+        };
 
-        if ui
-            .selectable_label(self.show_points, "Points")
-            .on_hover_text("Show/hide path points")
-            .clicked()
-        {
-            self.show_points = !self.show_points;
-        }
-
-        if ui
-            .selectable_label(self.show_point_numbers, "Pt#")
-            .on_hover_text("Show/hide point numbers")
-            .clicked()
-        {
-            self.show_point_numbers = !self.show_point_numbers;
-        }
-
-        if ui
-            .selectable_label(self.show_origin, "Origin")
-            .on_hover_text("Show/hide origin crosshair")
-            .clicked()
-        {
-            self.show_origin = !self.show_origin;
-        }
-
-        if ui
-            .selectable_label(self.show_bounds, "Bounds")
-            .on_hover_text("Show/hide geometry bounds")
-            .clicked()
-        {
-            self.show_bounds = !self.show_bounds;
-        }
+        toggle_label(ui, "Handles", &mut self.show_handles, "Show/hide handles");
+        ui.add_space(theme::PADDING);
+        toggle_label(ui, "Points", &mut self.show_points, "Show/hide path points");
+        ui.add_space(theme::PADDING);
+        toggle_label(ui, "Pt#", &mut self.show_point_numbers, "Show/hide point numbers");
+        ui.add_space(theme::PADDING);
+        toggle_label(ui, "Origin", &mut self.show_origin, "Show/hide origin crosshair");
+        ui.add_space(theme::PADDING);
+        toggle_label(ui, "Bounds", &mut self.show_bounds, "Show/hide geometry bounds");
     }
 
     /// Show the canvas viewer.
