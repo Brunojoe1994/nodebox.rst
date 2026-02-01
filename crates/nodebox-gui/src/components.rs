@@ -57,6 +57,15 @@ pub fn draw_pane_header_with_title(
         egui::Stroke::new(1.0, theme::TEXT_DISABLED),
     );
 
+    // Bottom border (1px dark line)
+    ui.painter().line_segment(
+        [
+            egui::pos2(header_rect.left(), header_rect.bottom()),
+            egui::pos2(header_rect.right(), header_rect.bottom()),
+        ],
+        egui::Stroke::new(1.0, theme::SLATE_950),
+    );
+
     // Return header rect and x position after separator (8px margin)
     let content_start_x = sep_x + theme::PADDING;
     (header_rect, content_start_x)
