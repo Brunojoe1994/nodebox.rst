@@ -292,4 +292,24 @@ Before proceeding, confirm:
 ---
 
 *Plan created: 2026-02-01*
-*Status: Draft - Awaiting review*
+*Status: Phase 1 & 2 Complete*
+
+## Implementation Progress
+
+### Phase 1: Foundation ✅ Complete
+- Added vello 0.7 workspace dependency
+- Created `vello_convert.rs` - geometry conversion (Path → kurbo BezPath)
+- Created `vello_renderer.rs` - Vello wrapper and ViewTransform
+- Added `gpu-rendering` feature flag (off by default)
+
+### Phase 2: Vello Viewer Widget ✅ Complete
+- Created `vello_viewer.rs` with VelloViewer widget
+- Manages separate wgpu context (handles version mismatch with egui-wgpu)
+- Texture-copy approach: GPU render → CPU buffer → egui texture
+- Integrated into ViewerPane with runtime toggle
+- Automatic fallback to CPU rendering if GPU unavailable
+
+### Remaining Phases
+- Phase 3: Feature Parity (grid, handles in Vello)
+- Phase 4: Optimization (scene caching, incremental rendering)
+- Phase 5: Advanced Features (gradients, blur, blend modes)
