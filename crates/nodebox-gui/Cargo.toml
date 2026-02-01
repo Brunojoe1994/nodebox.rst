@@ -39,7 +39,7 @@ tiny-skia = "0.11"
 muda = "0.15"
 
 [features]
-default = []
+default = ["gpu-rendering"]
 gpu-rendering = ["dep:vello", "dep:egui-wgpu", "dep:pollster", "eframe/wgpu"]
 
 [dependencies.vello]

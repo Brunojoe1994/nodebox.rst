@@ -530,10 +530,10 @@ impl eframe::App for NodeBoxApp {
                 // Get wgpu render state for GPU-accelerated rendering (when available)
                 #[cfg(feature = "gpu-rendering")]
                 let render_state = frame.wgpu_render_state();
-                #[cfg(feature = "gpu-rendering")]
-                let result = self.viewer_pane.show(ui, &self.state, render_state);
                 #[cfg(not(feature = "gpu-rendering"))]
-                let result = self.viewer_pane.show(ui, &self.state);
+                let render_state: Option<&crate::viewer_pane::RenderState> = None;
+
+                let result = self.viewer_pane.show(ui, &self.state, render_state);
                 match result {
                     HandleResult::PointChange { param, value } => {
                         self.handle_parameter_change(&param, value);
