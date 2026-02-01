@@ -293,21 +293,34 @@ impl AnimationBar {
     }
 
     /// Styled DragValue that follows the style guide.
+    /// Uses SLATE_800 for subtle elevation against SLATE_900 bar background.
     fn styled_drag_value(ui: &mut egui::Ui, value: &mut i32, range: std::ops::RangeInclusive<i32>) -> egui::Response {
-        // Override visuals for this widget
+        // Override visuals for this widget - use SLATE_800 for subtle elevation
         let old_visuals = ui.visuals().clone();
 
-        ui.visuals_mut().widgets.inactive.bg_fill = theme::TEXT_EDIT_BG;
+        // All states: no borders, sharp corners, appropriate fill
+        ui.visuals_mut().widgets.inactive.bg_fill = theme::SLATE_800;
+        ui.visuals_mut().widgets.inactive.weak_bg_fill = theme::SLATE_800;
         ui.visuals_mut().widgets.inactive.bg_stroke = egui::Stroke::NONE;
+        ui.visuals_mut().widgets.inactive.fg_stroke = egui::Stroke::new(1.0, theme::TEXT_DEFAULT);
         ui.visuals_mut().widgets.inactive.rounding = egui::Rounding::ZERO;
 
-        ui.visuals_mut().widgets.hovered.bg_fill = theme::HOVER_BG;
+        ui.visuals_mut().widgets.hovered.bg_fill = theme::SLATE_700;
+        ui.visuals_mut().widgets.hovered.weak_bg_fill = theme::SLATE_700;
         ui.visuals_mut().widgets.hovered.bg_stroke = egui::Stroke::NONE;
+        ui.visuals_mut().widgets.hovered.fg_stroke = egui::Stroke::new(1.0, theme::TEXT_STRONG);
         ui.visuals_mut().widgets.hovered.rounding = egui::Rounding::ZERO;
 
-        ui.visuals_mut().widgets.active.bg_fill = theme::WIDGET_ACTIVE_BG;
+        ui.visuals_mut().widgets.active.bg_fill = theme::SLATE_700;
+        ui.visuals_mut().widgets.active.weak_bg_fill = theme::SLATE_700;
         ui.visuals_mut().widgets.active.bg_stroke = egui::Stroke::NONE;
+        ui.visuals_mut().widgets.active.fg_stroke = egui::Stroke::new(1.0, theme::TEXT_STRONG);
         ui.visuals_mut().widgets.active.rounding = egui::Rounding::ZERO;
+
+        ui.visuals_mut().widgets.noninteractive.bg_fill = theme::SLATE_800;
+        ui.visuals_mut().widgets.noninteractive.weak_bg_fill = theme::SLATE_800;
+        ui.visuals_mut().widgets.noninteractive.bg_stroke = egui::Stroke::NONE;
+        ui.visuals_mut().widgets.noninteractive.rounding = egui::Rounding::ZERO;
 
         let response = ui.add(
             egui::DragValue::new(value)
@@ -326,17 +339,25 @@ impl AnimationBar {
         // Override visuals for this widget
         let old_visuals = ui.visuals().clone();
 
-        ui.visuals_mut().widgets.inactive.bg_fill = theme::TEXT_EDIT_BG;
+        ui.visuals_mut().widgets.inactive.bg_fill = theme::SLATE_800;
+        ui.visuals_mut().widgets.inactive.weak_bg_fill = theme::SLATE_800;
         ui.visuals_mut().widgets.inactive.bg_stroke = egui::Stroke::NONE;
         ui.visuals_mut().widgets.inactive.rounding = egui::Rounding::ZERO;
 
-        ui.visuals_mut().widgets.hovered.bg_fill = theme::HOVER_BG;
+        ui.visuals_mut().widgets.hovered.bg_fill = theme::SLATE_700;
+        ui.visuals_mut().widgets.hovered.weak_bg_fill = theme::SLATE_700;
         ui.visuals_mut().widgets.hovered.bg_stroke = egui::Stroke::NONE;
         ui.visuals_mut().widgets.hovered.rounding = egui::Rounding::ZERO;
 
-        ui.visuals_mut().widgets.active.bg_fill = theme::WIDGET_ACTIVE_BG;
+        ui.visuals_mut().widgets.active.bg_fill = theme::SLATE_700;
+        ui.visuals_mut().widgets.active.weak_bg_fill = theme::SLATE_700;
         ui.visuals_mut().widgets.active.bg_stroke = egui::Stroke::NONE;
         ui.visuals_mut().widgets.active.rounding = egui::Rounding::ZERO;
+
+        ui.visuals_mut().widgets.noninteractive.bg_fill = theme::SLATE_800;
+        ui.visuals_mut().widgets.noninteractive.weak_bg_fill = theme::SLATE_800;
+        ui.visuals_mut().widgets.noninteractive.bg_stroke = egui::Stroke::NONE;
+        ui.visuals_mut().widgets.noninteractive.rounding = egui::Rounding::ZERO;
 
         let response = ui.checkbox(checked, "");
 
