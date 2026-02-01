@@ -18,6 +18,7 @@ pub enum RenderRequest {
 }
 
 /// A result returned from the render worker.
+#[allow(dead_code)]
 pub enum RenderResult {
     /// Evaluation succeeded.
     Success { id: RenderRequestId, geometry: Vec<GeoPath> },

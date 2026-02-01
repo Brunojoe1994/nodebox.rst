@@ -2,8 +2,8 @@
 //!
 //! A simple tool to experiment with NodeBox geometry operations.
 
-use nodebox_core::geometry::{Path, Color, Point, Geometry, font};
-use nodebox_ops::*;
+use nodebox_core::geometry::{Path, Color, Point, font};
+use nodebox_ops::{rect, star, polygon};
 use nodebox_svg::render_to_svg;
 use std::io::{self, Write};
 
@@ -170,7 +170,7 @@ fn run_interactive() {
 
             "rect" | "rectangle" => {
                 let (x, y, w, h) = parse_rect_args(args, 50.0, 50.0, 100.0, 80.0);
-                let p = nodebox_ops::rect(Point::new(x, y), w, h, Point::ZERO);
+                let p = rect(Point::new(x, y), w, h, Point::ZERO);
                 paths.push(p);
                 println!("Added rect at ({}, {}), size {}x{}", x, y, w, h);
             }
@@ -180,7 +180,7 @@ fn run_interactive() {
                 let points: u32 = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(5);
                 let outer: f64 = args.get(5).and_then(|s| s.parse().ok()).unwrap_or(50.0);
                 let inner: f64 = args.get(6).and_then(|s| s.parse().ok()).unwrap_or(25.0);
-                let p = nodebox_ops::star(Point::new(x, y), points, outer, inner);
+                let p = star(Point::new(x, y), points, outer, inner);
                 paths.push(p);
                 println!("Added {}-point star at ({}, {})", points, x, y);
             }
@@ -189,7 +189,7 @@ fn run_interactive() {
                 let (x, y, _, _) = parse_rect_args(args, 100.0, 100.0, 0.0, 0.0);
                 let sides: u32 = args.get(2).and_then(|s| s.parse().ok()).unwrap_or(6);
                 let radius: f64 = args.get(3).and_then(|s| s.parse().ok()).unwrap_or(50.0);
-                let p = nodebox_ops::polygon(Point::new(x, y), radius, sides, true);
+                let p = polygon(Point::new(x, y), radius, sides, true);
                 paths.push(p);
                 println!("Added {}-sided polygon at ({}, {})", sides, x, y);
             }
@@ -281,15 +281,15 @@ fn demo_shapes() -> String {
     circle.fill = Some(Color::rgb(0.9, 0.2, 0.2));
     paths.push(circle);
 
-    let mut rect = nodebox_ops::rect(Point::new(180.0, 60.0), 100.0, 80.0, Point::ZERO);
+    let mut rect = rect(Point::new(180.0, 60.0), 100.0, 80.0, Point::ZERO);
     rect.fill = Some(Color::rgb(0.2, 0.8, 0.3));
     paths.push(rect);
 
-    let mut star = nodebox_ops::star(Point::new(350.0, 100.0), 5, 50.0, 25.0);
+    let mut star = star(Point::new(350.0, 100.0), 5, 50.0, 25.0);
     star.fill = Some(Color::rgb(0.2, 0.4, 0.9));
     paths.push(star);
 
-    let mut hex = nodebox_ops::polygon(Point::new(480.0, 100.0), 45.0, 6, true);
+    let mut hex = polygon(Point::new(480.0, 100.0), 45.0, 6, true);
     hex.fill = Some(Color::rgb(0.7, 0.3, 0.8));
     paths.push(hex);
 

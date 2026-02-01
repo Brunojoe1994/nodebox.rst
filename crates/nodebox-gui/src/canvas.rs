@@ -1,4 +1,8 @@
 //! Canvas viewer for rendering geometry.
+//!
+//! Note: This module is work-in-progress and not yet integrated.
+
+#![allow(dead_code)]
 
 use eframe::egui::{self, Color32, Pos2, Rect, Stroke, Vec2};
 use nodebox_core::geometry::{Color, Path, PointType, Point};

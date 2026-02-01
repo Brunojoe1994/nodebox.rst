@@ -35,6 +35,7 @@ pub struct NodeBoxApp {
 
 impl NodeBoxApp {
     /// Create a new NodeBox application instance.
+    #[allow(dead_code)]
     pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
         Self::new_with_file(_cc, None)
     }
@@ -75,6 +76,7 @@ impl NodeBoxApp {
     /// This constructor creates an app without spawning a render worker thread,
     /// making it suitable for unit tests and integration tests.
     #[cfg(test)]
+    #[allow(dead_code)]
     pub fn new_for_testing() -> Self {
         let state = AppState::new();
         let hash = Self::hash_library(&state.library);
@@ -98,6 +100,7 @@ impl NodeBoxApp {
     ///
     /// This is useful for tests that need to set up their own node configuration.
     #[cfg(test)]
+    #[allow(dead_code)]
     pub fn new_for_testing_empty() -> Self {
         let mut state = AppState::new();
         state.library = nodebox_core::node::NodeLibrary::new("test");
@@ -120,21 +123,25 @@ impl NodeBoxApp {
     }
 
     /// Get a reference to the application state.
+    #[allow(dead_code)]
     pub fn state(&self) -> &AppState {
         &self.state
     }
 
     /// Get a mutable reference to the application state.
+    #[allow(dead_code)]
     pub fn state_mut(&mut self) -> &mut AppState {
         &mut self.state
     }
 
     /// Get a reference to the history manager.
+    #[allow(dead_code)]
     pub fn history(&self) -> &History {
         &self.history
     }
 
     /// Get a mutable reference to the history manager.
+    #[allow(dead_code)]
     pub fn history_mut(&mut self) -> &mut History {
         &mut self.history
     }
@@ -143,6 +150,7 @@ impl NodeBoxApp {
     ///
     /// Unlike the normal async flow, this directly evaluates and updates geometry.
     #[cfg(test)]
+    #[allow(dead_code)]
     pub fn evaluate_for_testing(&mut self) {
         self.state.evaluate();
     }
@@ -152,6 +160,7 @@ impl NodeBoxApp {
     /// This checks for changes and updates history, similar to what happens
     /// during a normal frame update, but without the async render worker.
     #[cfg(test)]
+    #[allow(dead_code)]
     pub fn update_for_testing(&mut self) {
         // Check for changes and save to history
         let current_hash = Self::hash_library(&self.state.library);

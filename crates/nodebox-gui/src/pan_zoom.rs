@@ -92,6 +92,7 @@ impl PanZoom {
     }
 
     /// Convert a screen position to world position.
+    #[allow(dead_code)]
     pub fn screen_to_world(&self, screen: Pos2, origin: Vec2) -> Pos2 {
         ((screen.to_vec2() - self.pan - origin) / self.zoom).to_pos2()
     }

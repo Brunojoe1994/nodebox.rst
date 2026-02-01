@@ -173,6 +173,8 @@ fn color_to_skia(color: Color) -> tiny_skia::Color {
 }
 
 /// Calculate the bounds of geometry.
+/// Note: Currently only used in tests, but kept for future use.
+#[allow(dead_code)]
 pub fn calculate_bounds(geometry: &[GeoPath]) -> (f64, f64, f64, f64) {
     let mut min_x = f64::MAX;
     let mut min_y = f64::MAX;

@@ -1,6 +1,7 @@
 //! Common test utilities for nodebox-gui tests.
+#![allow(dead_code)]
 
-use nodebox_gui::{Color, Connection, Node, NodeLibrary, Point, Port, Value};
+use nodebox_gui::{Color, Connection, Node, NodeLibrary, Point, Port};
 
 /// Create a node library with a single ellipse node.
 pub fn library_with_ellipse() -> NodeLibrary {

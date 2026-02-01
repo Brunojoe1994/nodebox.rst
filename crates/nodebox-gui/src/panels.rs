@@ -67,7 +67,7 @@ impl ParameterPanel {
                     0.0,
                     Color32::from_rgb(75, 75, 75),
                 );
-                ui.allocate_ui_at_rect(header_rect, |ui| {
+                ui.allocate_new_ui(egui::UiBuilder::new().max_rect(header_rect), |ui| {
                     ui.horizontal_centered(|ui| {
                         ui.add_space(8.0);
                         // Node name on left
@@ -550,7 +550,7 @@ impl ParameterPanel {
                 0.0,
                 Color32::from_rgb(75, 75, 75),
             );
-            ui.allocate_ui_at_rect(header_rect, |ui| {
+            ui.allocate_new_ui(egui::UiBuilder::new().max_rect(header_rect), |ui| {
                 ui.horizontal_centered(|ui| {
                     ui.add_space(8.0);
                     ui.label(
@@ -591,7 +591,7 @@ impl ParameterPanel {
             0.0,
             Color32::from_rgb(75, 75, 75),
         );
-        ui.allocate_ui_at_rect(header_rect, |ui| {
+        ui.allocate_new_ui(egui::UiBuilder::new().max_rect(header_rect), |ui| {
             ui.horizontal_centered(|ui| {
                 ui.add_space(8.0);
                 ui.label(

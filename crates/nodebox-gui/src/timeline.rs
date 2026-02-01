@@ -1,4 +1,8 @@
 //! Animation timeline widget.
+//!
+//! Note: This module is work-in-progress and not yet integrated.
+
+#![allow(dead_code)]
 
 use eframe::egui::{self, Color32, Pos2, Stroke, Vec2};
 use std::time::{Duration, Instant};

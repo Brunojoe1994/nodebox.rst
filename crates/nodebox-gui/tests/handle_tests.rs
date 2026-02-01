@@ -26,6 +26,7 @@ fn get_position_from_node_old_broken(node: &Node) -> Point {
 
 /// Simulates the handle creation code in canvas.rs/viewer_pane.rs.
 /// This function mimics the CURRENT (broken) behavior.
+#[allow(dead_code)]
 fn create_ellipse_handles_current_behavior(node: &Node) -> Vec<nodebox_gui::handles::Handle> {
     // This is what canvas.rs lines 152-157 currently do (BROKEN)
     let x = node.input("x").and_then(|p| p.value.as_float()).unwrap_or(0.0);

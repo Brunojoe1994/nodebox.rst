@@ -41,6 +41,7 @@ impl NodeOutput {
     }
 
     /// Get as a single path if available.
+    #[allow(dead_code)]
     pub fn as_path(&self) -> Option<&Path> {
         match self {
             NodeOutput::Path(p) => Some(p),
@@ -49,6 +50,7 @@ impl NodeOutput {
     }
 
     /// Get as paths (single or list).
+    #[allow(dead_code)]
     pub fn as_paths(&self) -> Option<Vec<Path>> {
         match self {
             NodeOutput::Path(p) => Some(vec![p.clone()]),

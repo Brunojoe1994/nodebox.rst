@@ -1,4 +1,8 @@
 //! Native menu bar support for macOS.
+//!
+//! Note: Menu polling is not yet integrated into the main event loop.
+
+#![allow(dead_code)]
 
 #[cfg(target_os = "macos")]
 use muda::{Menu, MenuItem, PredefinedMenuItem, Submenu, accelerator::Accelerator, MenuEvent};

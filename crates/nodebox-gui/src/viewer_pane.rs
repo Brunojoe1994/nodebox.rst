@@ -236,31 +236,37 @@ impl ViewerPane {
     }
 
     /// Get the current pan offset.
+    #[allow(dead_code)]
     pub fn pan(&self) -> Vec2 {
         self.pan_zoom.pan
     }
 
     /// Zoom in by a step.
+    #[allow(dead_code)]
     pub fn zoom_in(&mut self) {
         self.pan_zoom.zoom_in();
     }
 
     /// Zoom out by a step.
+    #[allow(dead_code)]
     pub fn zoom_out(&mut self) {
         self.pan_zoom.zoom_out();
     }
 
     /// Fit the view to show all geometry.
+    #[allow(dead_code)]
     pub fn fit_to_window(&mut self) {
         self.pan_zoom.reset();
     }
 
     /// Get a mutable reference to the handles.
+    #[allow(dead_code)]
     pub fn handles_mut(&mut self) -> &mut Option<HandleSet> {
         &mut self.handles
     }
 
     /// Set handles.
+    #[allow(dead_code)]
     pub fn set_handles(&mut self, handles: Option<HandleSet>) {
         self.handles = handles;
     }

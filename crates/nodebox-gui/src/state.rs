@@ -56,6 +56,7 @@ impl AppState {
     }
 
     /// Re-evaluate the network and update the geometry.
+    #[allow(dead_code)]
     pub fn evaluate(&mut self) {
         self.geometry = eval::evaluate_network(&self.library);
     }

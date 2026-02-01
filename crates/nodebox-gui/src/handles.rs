@@ -23,6 +23,7 @@ pub enum FourPointDragState {
 
 /// Types of handles available.
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[allow(dead_code)]
 pub enum HandleType {
     /// A point that can be moved in any direction.
     Point,
@@ -97,6 +98,7 @@ pub struct HandleSet {
     /// The handles in this set.
     handles: Vec<Handle>,
     /// The node name these handles belong to.
+    #[allow(dead_code)]
     pub node_name: String,
 }
 
@@ -207,6 +209,7 @@ pub fn ellipse_handles(x: f64, y: f64, width: f64, height: f64) -> Vec<Handle> {
 }
 
 /// Create handles for a rect node.
+#[allow(dead_code)]
 pub fn rect_handles(x: f64, y: f64, width: f64, height: f64) -> Vec<Handle> {
     vec![
         Handle::point("position", Point::new(x, y))
@@ -217,6 +220,7 @@ pub fn rect_handles(x: f64, y: f64, width: f64, height: f64) -> Vec<Handle> {
 }
 
 /// Create handles for a line node.
+#[allow(dead_code)]
 pub fn line_handles(point1: Point, point2: Point) -> Vec<Handle> {
     vec![
         Handle::point("point1", point1)
@@ -227,6 +231,7 @@ pub fn line_handles(point1: Point, point2: Point) -> Vec<Handle> {
 }
 
 /// Create handles for transform operations.
+#[allow(dead_code)]
 pub fn transform_handles(center: Point, tx: f64, ty: f64) -> Vec<Handle> {
     vec![
         Handle::point("offset", Point::new(center.x + tx, center.y + ty))
@@ -238,6 +243,7 @@ pub fn transform_handles(center: Point, tx: f64, ty: f64) -> Vec<Handle> {
 #[derive(Clone, Debug)]
 pub struct FourPointHandle {
     /// The node name this handle controls.
+    #[allow(dead_code)]
     pub node_name: String,
     /// Center position of the rect.
     pub center: Point,

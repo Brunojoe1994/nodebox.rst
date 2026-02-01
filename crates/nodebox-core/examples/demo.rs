@@ -1,6 +1,6 @@
 //! Quick demo of NodeBox Rust core functionality.
 
-use nodebox_core::geometry::{Path, Point, Color, font};
+use nodebox_core::geometry::{Path, Point, font};
 
 fn main() {
     println!("=== NodeBox Rust Core Demo ===\n");

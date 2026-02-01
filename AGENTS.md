@@ -99,3 +99,98 @@ All spacing should be multiples of 8px:
 4. **Hover feedback** - Add 2px expansion + background color change on hover
 5. **Selection states** - Use `SELECTION_BG` with `BLUE_400` stroke (2px)
 6. **Call `theme::configure_style()`** - This is done in app startup; don't override global styles
+
+## API Design & Backwards Compatibility
+
+### Property Names
+When renaming properties in the API, keep internal storage names for backwards compatibility:
+- Internal property: `canvasWidth`, `canvasHeight` (for file format compatibility)
+- External API: `width()`, `height()` (cleaner public interface)
+
+```rust
+// In NodeLibrary
+pub fn width(&self) -> f64 {
+    self.properties
+        .get("canvasWidth")  // Internal name for backwards compat
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(1000.0)
+}
+```
+
+### Centered Coordinate System
+The canvas uses a centered coordinate system where:
+- Geometry is positioned relative to the origin (0, 0)
+- Canvas extends from `-width/2` to `+width/2` and `-height/2` to `+height/2`
+- This matches standard graphics conventions and simplifies transforms
+
+**For SVG export:**
+```rust
+// Use centered viewBox
+let half_w = width / 2.0;
+let half_h = height / 2.0;
+format!(r#"viewBox="{} {} {} {}""#, -half_w, -half_h, width, height)
+```
+
+**For PNG export with tiny_skia:**
+```rust
+// Center the transform
+let transform = Transform::from_translate(width as f32 / 2.0, height as f32 / 2.0);
+```
+
+## Screen-space Rendering
+
+For UI elements that should remain constant size regardless of zoom (handles, borders, guides):
+- Apply zoom transform to world coordinates first
+- Use fixed pixel values for stroke width and sizes after transformation
+
+```rust
+// Canvas border with constant 1px stroke
+let screen_top_left = self.pan_zoom.world_to_screen(top_left, center);
+let screen_bottom_right = self.pan_zoom.world_to_screen(bottom_right, center);
+painter.rect_stroke(canvas_rect, 0.0, Stroke::new(1.0, border_color));
+```
+
+## Rust Dead Code Warnings
+
+### Module-level suppression
+For WIP modules or test utilities where many items may be unused:
+```rust
+#![allow(dead_code)]
+```
+
+### Item-level suppression
+For individual items that are intentionally kept for future use or API completeness:
+```rust
+#[allow(dead_code)]
+pub fn some_future_method(&self) { ... }
+```
+
+### Test-only methods
+Methods marked `#[cfg(test)]` still generate warnings if unused within tests:
+```rust
+#[cfg(test)]
+#[allow(dead_code)]
+pub fn new_for_testing() -> Self { ... }
+```
+
+## egui Migration Notes
+
+### Deprecated methods
+- `ui.allocate_ui_at_rect(rect, |ui| { ... })` is deprecated
+- Use `ui.allocate_new_ui(egui::UiBuilder::new().max_rect(rect), |ui| { ... })` instead
+
+## Build Commands
+
+### Excluding problematic crates
+The `nodebox-python` crate has pyo3 dependencies that may cause build issues. Exclude it when not needed:
+```bash
+cargo build --workspace --exclude nodebox-python
+cargo test --workspace --exclude nodebox-python
+```
+
+### Running specific crates
+```bash
+cargo run -p nodebox-gui          # Run the GUI
+cargo run -p nodebox-cli          # Run the CLI
+cargo test -p nodebox-core        # Test specific crate
+```
