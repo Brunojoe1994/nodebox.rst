@@ -541,11 +541,14 @@ impl eframe::App for NodeBoxApp {
 
 impl NodeBoxApp {
     /// Show a consistent section header (Figma-style).
+    /// Uses allocate_space to properly advance the cursor without extra gaps.
     fn show_section_header<F: FnOnce(&mut egui::Ui)>(ui: &mut egui::Ui, title: &str, _action: Option<F>) {
         let header_height = theme::PANE_HEADER_HEIGHT;
-        let header_rect = egui::Rect::from_min_size(
-            ui.cursor().min,
+
+        // Allocate the exact space for the header (this advances the cursor)
+        let (header_rect, _response) = ui.allocate_exact_size(
             egui::vec2(ui.available_width(), header_height),
+            egui::Sense::hover(),
         );
 
         // Draw header background
@@ -555,18 +558,14 @@ impl NodeBoxApp {
             theme::HEADER_BACKGROUND,
         );
 
-        ui.allocate_ui_at_rect(header_rect, |ui| {
-            ui.horizontal_centered(|ui| {
-                ui.add_space(theme::PADDING);
-                ui.label(
-                    egui::RichText::new(title)
-                        .color(theme::TEXT_SUBDUED)
-                        .size(10.0),
-                );
-            });
-        });
-
-        ui.add_space(header_height);
+        // Draw the title text
+        ui.painter().text(
+            header_rect.left_center() + egui::vec2(theme::PADDING, 0.0),
+            egui::Align2::LEFT_CENTER,
+            title,
+            egui::FontId::proportional(10.0),
+            theme::TEXT_SUBDUED,
+        );
     }
 
     /// Handle FourPointHandle change (rect x, y, width, height).
