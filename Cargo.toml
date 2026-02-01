@@ -37,7 +37,7 @@ kurbo = "0.11"
 font-kit = "0.14"
 pathfinder_geometry = "0.5"
 
-# UUID generation
+# UUID generation (add "js" feature for wasm32 builds)
 uuid = { version = "1.6", features = ["v4"] }
 
 # XML parsing

@@ -316,7 +316,7 @@ impl NodeBoxApp {
                 ui.checkbox(&mut self.viewer_pane.show_handles, "Show Handles");
                 ui.checkbox(&mut self.viewer_pane.show_points, "Show Points");
                 ui.checkbox(&mut self.viewer_pane.show_origin, "Show Origin");
-                ui.checkbox(&mut self.viewer_pane.show_bounds, "Show Bounds");
+                ui.checkbox(&mut self.viewer_pane.show_canvas_border, "Show Canvas");
             });
 
             ui.menu_button("Help", |ui| {
@@ -645,7 +645,10 @@ impl NodeBoxApp {
             .add_filter("SVG Files", &["svg"])
             .save_file()
         {
-            if let Err(e) = self.state.export_svg(&path) {
+            // Use document dimensions for export
+            let width = self.state.library.width();
+            let height = self.state.library.height();
+            if let Err(e) = self.state.export_svg(&path, width, height) {
                 log::error!("Failed to export SVG: {}", e);
             }
         }
@@ -656,11 +659,9 @@ impl NodeBoxApp {
             .add_filter("PNG Files", &["png"])
             .save_file()
         {
-            // Calculate bounds and export dimensions
-            let (min_x, min_y, max_x, max_y) = crate::export::calculate_bounds(&self.state.geometry);
-            let padding = 20.0;
-            let width = ((max_x - min_x + padding * 2.0).max(100.0)) as u32;
-            let height = ((max_y - min_y + padding * 2.0).max(100.0)) as u32;
+            // Use document dimensions for export
+            let width = self.state.library.width() as u32;
+            let height = self.state.library.height() as u32;
 
             if let Err(e) = crate::export::export_png(
                 &self.state.geometry,

@@ -2876,6 +2876,7 @@ dependencies = [
  "nodebox-ops",
  "nodebox-svg",
  "rfd",
+ "tempfile",
  "tiny-skia",
 ]
 

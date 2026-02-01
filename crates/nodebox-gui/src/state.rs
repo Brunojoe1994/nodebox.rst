@@ -3,7 +3,6 @@
 use std::path::{Path, PathBuf};
 use nodebox_core::geometry::{Path as GeoPath, Color};
 use nodebox_core::node::{Node, NodeLibrary, Port, Connection};
-use nodebox_svg::render_to_svg;
 use crate::eval;
 
 /// The main application state.
@@ -170,26 +169,12 @@ impl AppState {
     }
 
     /// Export to SVG.
-    pub fn export_svg(&self, path: &Path) -> Result<(), String> {
-        // Calculate bounds
-        let mut min_x = f64::MAX;
-        let mut min_y = f64::MAX;
-        let mut max_x = f64::MIN;
-        let mut max_y = f64::MIN;
-
-        for geo in &self.geometry {
-            if let Some(bounds) = geo.bounds() {
-                min_x = min_x.min(bounds.x);
-                min_y = min_y.min(bounds.y);
-                max_x = max_x.max(bounds.x + bounds.width);
-                max_y = max_y.max(bounds.y + bounds.height);
-            }
-        }
-
-        let width = (max_x - min_x + 40.0).max(100.0);
-        let height = (max_y - min_y + 40.0).max(100.0);
-
-        let svg = render_to_svg(&self.geometry, width, height);
+    /// Uses document width/height and centered coordinate system.
+    pub fn export_svg(&self, path: &Path, width: f64, height: f64) -> Result<(), String> {
+        let options = nodebox_svg::SvgOptions::new(width, height)
+            .with_centered(true)
+            .with_background(Some(self.background_color));
+        let svg = nodebox_svg::render_to_svg_with_options(&self.geometry, &options);
         std::fs::write(path, svg).map_err(|e| e.to_string())
     }
 }

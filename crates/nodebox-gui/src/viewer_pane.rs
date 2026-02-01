@@ -186,8 +186,8 @@ pub struct ViewerPane {
     pub show_point_numbers: bool,
     /// Whether to show origin crosshair.
     pub show_origin: bool,
-    /// Whether to show geometry bounds.
-    pub show_bounds: bool,
+    /// Whether to show the canvas border.
+    pub show_canvas_border: bool,
     /// Pan and zoom state.
     pan_zoom: PanZoom,
     /// Active handles for the selected node.
@@ -219,7 +219,7 @@ impl ViewerPane {
             show_points: false,
             show_point_numbers: false,
             show_origin: true,
-            show_bounds: false,
+            show_canvas_border: true,
             pan_zoom: PanZoom::with_zoom_limits(0.1, 10.0),
             handles: None,
             four_point_handle: None,
@@ -339,11 +339,11 @@ impl ViewerPane {
         }
 
         if ui
-            .selectable_label(self.show_bounds, "Bounds")
-            .on_hover_text("Show/hide geometry bounds")
+            .selectable_label(self.show_canvas_border, "Canvas")
+            .on_hover_text("Show/hide canvas border")
             .clicked()
         {
-            self.show_bounds = !self.show_bounds;
+            self.show_canvas_border = !self.show_canvas_border;
         }
     }
 
@@ -401,14 +401,14 @@ impl ViewerPane {
         // Draw a subtle grid
         self.draw_grid(&painter, rect);
 
+        // Draw canvas border (uses document width/height)
+        if self.show_canvas_border {
+            self.draw_canvas_border(&painter, center, state.library.width(), state.library.height());
+        }
+
         // Draw all geometry
         for path in &state.geometry {
             self.draw_path(&painter, path, center);
-
-            // Draw bounds if enabled
-            if self.show_bounds {
-                self.draw_bounds(&painter, path, center);
-            }
 
             // Draw points if enabled
             if self.show_points {
@@ -583,6 +583,26 @@ impl ViewerPane {
         });
     }
 
+    /// Draw the canvas border (document bounds).
+    /// The border is drawn in screen space (constant 1px line width regardless of zoom).
+    fn draw_canvas_border(&self, painter: &egui::Painter, center: Vec2, width: f64, height: f64) {
+        // Canvas is centered at origin, so bounds are from -width/2 to +width/2
+        let half_width = width as f32 / 2.0;
+        let half_height = height as f32 / 2.0;
+
+        let top_left = Pos2::new(-half_width, -half_height);
+        let bottom_right = Pos2::new(half_width, half_height);
+
+        let screen_top_left = self.pan_zoom.world_to_screen(top_left, center);
+        let screen_bottom_right = self.pan_zoom.world_to_screen(bottom_right, center);
+
+        let canvas_rect = Rect::from_min_max(screen_top_left, screen_bottom_right);
+
+        // Draw border with constant 1px line width (screen space)
+        let border_color = Color32::from_rgba_unmultiplied(128, 128, 128, 180);
+        painter.rect_stroke(canvas_rect, 0.0, Stroke::new(1.0, border_color));
+    }
+
     /// Draw a background grid.
     fn draw_grid(&self, painter: &egui::Painter, rect: Rect) {
         let grid_size = 50.0 * self.pan_zoom.zoom;
@@ -613,27 +633,6 @@ impl ViewerPane {
                 Stroke::new(1.0, grid_color),
             );
             y += grid_size;
-        }
-    }
-
-    /// Draw geometry bounds.
-    fn draw_bounds(&self, painter: &egui::Painter, path: &Path, center: Vec2) {
-        if let Some(bounds) = path.bounds() {
-            let min = Pos2::new(bounds.x as f32, bounds.y as f32);
-            let max = Pos2::new(
-                (bounds.x + bounds.width) as f32,
-                (bounds.y + bounds.height) as f32,
-            );
-
-            let screen_min = self.pan_zoom.world_to_screen(min, center);
-            let screen_max = self.pan_zoom.world_to_screen(max, center);
-
-            let bounds_rect = Rect::from_min_max(screen_min, screen_max);
-            painter.rect_stroke(
-                bounds_rect,
-                0.0,
-                Stroke::new(1.0, Color32::from_rgba_unmultiplied(255, 255, 0, 100)),
-            );
         }
     }
 

@@ -18,6 +18,8 @@ pub struct SvgOptions {
     pub xml_declaration: bool,
     /// Whether to include a viewBox attribute.
     pub include_viewbox: bool,
+    /// Whether the canvas is centered at origin (viewBox starts at -width/2, -height/2).
+    pub centered: bool,
 }
 
 impl Default for SvgOptions {
@@ -29,6 +31,7 @@ impl Default for SvgOptions {
             precision: 2,
             xml_declaration: true,
             include_viewbox: true,
+            centered: false,
         }
     }
 }
@@ -52,6 +55,13 @@ impl SvgOptions {
     /// Sets whether to include XML declaration.
     pub fn with_xml_declaration(mut self, include: bool) -> Self {
         self.xml_declaration = include;
+        self
+    }
+
+    /// Sets whether the canvas is centered at origin.
+    /// When centered, the viewBox starts at (-width/2, -height/2) instead of (0, 0).
+    pub fn with_centered(mut self, centered: bool) -> Self {
+        self.centered = centered;
         self
     }
 }
@@ -92,7 +102,14 @@ pub fn render_to_svg_with_options(paths: &[Path], options: &SvgOptions) -> Strin
     write!(svg, r#" width="{}" height="{}""#, options.width, options.height).unwrap();
 
     if options.include_viewbox {
-        write!(svg, r#" viewBox="0 0 {} {}""#, options.width, options.height).unwrap();
+        if options.centered {
+            // Centered viewBox: origin is at center of canvas
+            let half_w = options.width / 2.0;
+            let half_h = options.height / 2.0;
+            write!(svg, r#" viewBox="{} {} {} {}""#, -half_w, -half_h, options.width, options.height).unwrap();
+        } else {
+            write!(svg, r#" viewBox="0 0 {} {}""#, options.width, options.height).unwrap();
+        }
     }
 
     writeln!(svg, ">").unwrap();
@@ -440,6 +457,39 @@ mod tests {
         // Should have two path elements
         let path_count = svg.matches("<path").count();
         assert_eq!(path_count, 2);
+    }
+
+    #[test]
+    fn test_render_centered_viewbox() {
+        let options = SvgOptions::new(200.0, 100.0).with_centered(true);
+        let svg = render_to_svg_with_options(&[], &options);
+
+        // Centered viewBox should be "-100 -50 200 100"
+        assert!(svg.contains(r#"viewBox="-100 -50 200 100""#),
+            "Centered viewBox should have negative origin. SVG: {}", svg);
+    }
+
+    #[test]
+    fn test_render_centered_geometry_position() {
+        // Create a rect centered at origin
+        let rect = Path::rect(-25.0, -25.0, 50.0, 50.0);
+        let options = SvgOptions::new(100.0, 100.0).with_centered(true);
+        let svg = render_to_svg_with_options(&[rect], &options);
+
+        // The viewBox should be centered
+        assert!(svg.contains(r#"viewBox="-50 -50 100 100""#));
+
+        // The path should be at the original coordinates (centered at origin)
+        assert!(svg.contains("M-25"));
+    }
+
+    #[test]
+    fn test_render_not_centered_default() {
+        let options = SvgOptions::new(100.0, 100.0);
+        let svg = render_to_svg_with_options(&[], &options);
+
+        // Default (not centered) viewBox should start at 0,0
+        assert!(svg.contains(r#"viewBox="0 0 100 100""#));
     }
 
     #[test]

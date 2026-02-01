@@ -603,7 +603,7 @@ impl ParameterPanel {
         });
         ui.add_space(theme::PARAMETER_ROW_HEIGHT + 8.0);
 
-        // Canvas width
+        // Width
         ui.horizontal(|ui| {
             ui.set_height(theme::PARAMETER_ROW_HEIGHT);
 
@@ -614,7 +614,7 @@ impl ParameterPanel {
                 |ui| {
                     ui.add_space(8.0);
                     let galley = ui.painter().layout_no_wrap(
-                        "canvasWidth".to_string(),
+                        "width".to_string(),
                         egui::FontId::proportional(11.0),
                         theme::TEXT_NORMAL,
                     );
@@ -628,21 +628,20 @@ impl ParameterPanel {
             );
 
             // Value
-            let mut width = state.library.canvas_width();
-            let key = ("__document__".to_string(), "canvasWidth".to_string());
+            let mut width = state.library.width();
+            let key = ("__document__".to_string(), "width".to_string());
             let is_editing = self.editing.as_ref()
                 .map(|(n, p, _, _)| n == &key.0 && p == &key.1)
                 .unwrap_or(false);
             self.show_drag_value_float(ui, &mut width, Some(1.0), None, 1.0, &key, is_editing);
 
             // Update the property if changed
-            let new_width = (width as i64).to_string();
-            if state.library.property("canvasWidth") != Some(&new_width) {
-                state.library.set_property("canvasWidth", new_width);
+            if (state.library.width() - width).abs() > 0.001 {
+                state.library.set_width(width);
             }
         });
 
-        // Canvas height
+        // Height
         ui.horizontal(|ui| {
             ui.set_height(theme::PARAMETER_ROW_HEIGHT);
 
@@ -653,7 +652,7 @@ impl ParameterPanel {
                 |ui| {
                     ui.add_space(8.0);
                     let galley = ui.painter().layout_no_wrap(
-                        "canvasHeight".to_string(),
+                        "height".to_string(),
                         egui::FontId::proportional(11.0),
                         theme::TEXT_NORMAL,
                     );
@@ -667,17 +666,16 @@ impl ParameterPanel {
             );
 
             // Value
-            let mut height = state.library.canvas_height();
-            let key = ("__document__".to_string(), "canvasHeight".to_string());
+            let mut height = state.library.height();
+            let key = ("__document__".to_string(), "height".to_string());
             let is_editing = self.editing.as_ref()
                 .map(|(n, p, _, _)| n == &key.0 && p == &key.1)
                 .unwrap_or(false);
             self.show_drag_value_float(ui, &mut height, Some(1.0), None, 1.0, &key, is_editing);
 
             // Update the property if changed
-            let new_height = (height as i64).to_string();
-            if state.library.property("canvasHeight") != Some(&new_height) {
-                state.library.set_property("canvasHeight", new_height);
+            if (state.library.height() - height).abs() > 0.001 {
+                state.library.set_height(height);
             }
         });
     }
