@@ -325,7 +325,7 @@ pub const PORT_COLOR_STRING: Color32 = Color32::from_rgb(34, 197, 94); // Green
 pub const PORT_COLOR_BOOLEAN: Color32 = Color32::from_rgb(234, 179, 8); // Yellow
 pub const PORT_COLOR_POINT: Color32 = Color32::from_rgb(56, 189, 248);  // Sky blue
 pub const PORT_COLOR_COLOR: Color32 = Color32::from_rgb(236, 72, 153);  // Pink
-pub const PORT_COLOR_GEOMETRY: Color32 = Color32::from_rgb(139, 92, 246); // Violet
+pub const PORT_COLOR_GEOMETRY: Color32 = SLATE_600; // Same as node body
 pub const PORT_COLOR_LIST: Color32 = Color32::from_rgb(20, 184, 166);   // Teal
 pub const PORT_COLOR_DATA: Color32 = Color32::from_rgb(249, 115, 22);   // Orange
 
