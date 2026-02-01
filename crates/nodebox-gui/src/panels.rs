@@ -3,6 +3,7 @@
 use eframe::egui::{self, Sense, TextStyle};
 use nodebox_core::node::{PortType, Widget};
 use nodebox_core::Value;
+use crate::components;
 use crate::state::AppState;
 use crate::theme;
 
@@ -530,47 +531,13 @@ impl ParameterPanel {
 
     /// Show the merged parameters header: PARAMETERS | node_name ... prototype
     fn show_parameters_header(&self, ui: &mut egui::Ui, node_name: Option<&str>, prototype: Option<&str>) {
-        let header_height = theme::PANE_HEADER_HEIGHT;
-        let (header_rect, _) = ui.allocate_exact_size(
-            egui::vec2(ui.available_width(), header_height),
-            egui::Sense::hover(),
-        );
+        let (header_rect, x) = components::draw_pane_header_with_title(ui, "Parameters");
 
-        ui.painter().rect_filled(
-            header_rect,
-            0.0,
-            theme::PANE_HEADER_BACKGROUND_COLOR,
-        );
-
-        // "PARAMETERS" title on left
-        let title_font = egui::FontId::proportional(10.0);
-        let title_galley = ui.painter().layout_no_wrap(
-            "PARAMETERS".to_string(),
-            title_font.clone(),
-            theme::PANE_HEADER_FOREGROUND_COLOR,
-        );
-        let title_x = header_rect.left() + theme::PADDING;
-        ui.painter().galley(
-            egui::pos2(title_x, header_rect.center().y - title_galley.size().y / 2.0),
-            title_galley.clone(),
-            theme::PANE_HEADER_FOREGROUND_COLOR,
-        );
-
-        // Only show separator and node info if we have a node name
+        // Only show node info if we have a node name
         if let Some(name) = node_name {
-            // Vertical separator after PARAMETERS (8px margin on both sides)
-            let sep_x = title_x + title_galley.size().x + 8.0;
-            ui.painter().line_segment(
-                [
-                    egui::pos2(sep_x, header_rect.top() + 4.0),
-                    egui::pos2(sep_x, header_rect.bottom() - 4.0),
-                ],
-                egui::Stroke::new(1.0, theme::TEXT_DISABLED),
-            );
-
-            // Node name after separator (8px margin)
+            // Node name after separator
             ui.painter().text(
-                egui::pos2(sep_x + 8.0, header_rect.center().y),
+                egui::pos2(x, header_rect.center().y),
                 egui::Align2::LEFT_CENTER,
                 name,
                 egui::FontId::proportional(10.0),

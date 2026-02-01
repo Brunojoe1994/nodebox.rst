@@ -15,6 +15,7 @@ mod address_bar;
 mod animation_bar;
 pub mod app;
 mod canvas;
+mod components;
 pub mod eval;
 mod export;
 pub mod handles;

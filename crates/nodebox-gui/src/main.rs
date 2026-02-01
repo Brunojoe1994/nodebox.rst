@@ -7,6 +7,7 @@ mod address_bar;
 mod animation_bar;
 mod app;
 mod canvas;
+mod components;
 mod eval;
 mod export;
 mod handles;

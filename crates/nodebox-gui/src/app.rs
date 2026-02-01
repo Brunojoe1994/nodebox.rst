@@ -4,6 +4,7 @@ use eframe::egui::{self, Pos2, Rect, Vec2};
 use nodebox_core::geometry::Point;
 use crate::address_bar::AddressBar;
 use crate::animation_bar::AnimationBar;
+use crate::components;
 use crate::history::History;
 use crate::icon_cache::IconCache;
 use crate::network_view::{NetworkAction, NetworkView};
@@ -435,68 +436,18 @@ impl eframe::App for NodeBoxApp {
                     ui.set_clip_rect(network_rect);
 
                     // Network header with "+ New Node" button
-                    let header_height = theme::PANE_HEADER_HEIGHT;
-                    let (header_rect, _) = ui.allocate_exact_size(
-                        egui::vec2(ui.available_width(), header_height),
-                        egui::Sense::hover(),
-                    );
-
-                    // Header background
-                    ui.painter().rect_filled(header_rect, 0.0, theme::PANE_HEADER_BACKGROUND_COLOR);
-
-                    // "NETWORK" title on left
-                    let title_font = egui::FontId::proportional(10.0);
-                    let title_text = "NETWORK";
-                    let title_galley = ui.painter().layout_no_wrap(
-                        title_text.to_string(),
-                        title_font.clone(),
-                        theme::PANE_HEADER_FOREGROUND_COLOR,
-                    );
-                    let title_x = header_rect.left() + theme::PADDING;
-                    ui.painter().galley(
-                        egui::pos2(title_x, header_rect.center().y - title_galley.size().y / 2.0),
-                        title_galley.clone(),
-                        theme::PANE_HEADER_FOREGROUND_COLOR,
-                    );
-
-                    // Vertical separator line (1px, mid-gray) - 8px after NETWORK
-                    let sep_x = title_x + title_galley.size().x + 8.0;
-                    ui.painter().line_segment(
-                        [
-                            egui::pos2(sep_x, header_rect.top() + 4.0),
-                            egui::pos2(sep_x, header_rect.bottom() - 4.0),
-                        ],
-                        egui::Stroke::new(1.0, theme::TEXT_DISABLED),
-                    );
+                    let (header_rect, x) = components::draw_pane_header_with_title(ui, "Network");
 
                     // "+ New Node" button after the separator
-                    let button_text = "+ New Node";
-                    let button_font = egui::FontId::proportional(10.0);
-                    let button_width = 70.0;
-                    let button_x = sep_x + 8.0;
-
-                    // Button area
-                    let button_rect = egui::Rect::from_min_size(
-                        egui::pos2(button_x, header_rect.top()),
-                        egui::vec2(button_width, header_height),
-                    );
-                    let button_response = ui.interact(button_rect, ui.id().with("new_node_btn"), egui::Sense::click());
-
-                    // Button text (changes color on hover)
-                    let button_color = if button_response.hovered() {
-                        theme::TEXT_STRONG
-                    } else {
-                        theme::PANE_HEADER_FOREGROUND_COLOR
-                    };
-                    ui.painter().text(
-                        button_rect.left_center(),
-                        egui::Align2::LEFT_CENTER,
-                        button_text,
-                        button_font,
-                        button_color,
+                    let (clicked, _) = components::header_text_button(
+                        ui,
+                        header_rect,
+                        x,
+                        "+ New Node",
+                        70.0,
                     );
 
-                    if button_response.clicked() {
+                    if clicked {
                         self.node_dialog.open(Point::new(0.0, 0.0));
                     }
 
