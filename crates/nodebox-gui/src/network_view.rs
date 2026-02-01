@@ -29,8 +29,6 @@ pub struct NetworkView {
     is_dragging_selection: bool,
     /// Connection being created, if any.
     creating_connection: Option<ConnectionDrag>,
-    /// Index of hovered connection, if any.
-    hovered_connection: Option<usize>,
     /// Whether space bar is currently pressed (for panning).
     is_space_pressed: bool,
     /// Whether we are currently panning with space+drag.
@@ -83,7 +81,6 @@ impl NetworkView {
             selected: HashSet::new(),
             is_dragging_selection: false,
             creating_connection: None,
-            hovered_connection: None,
             is_space_pressed: false,
             is_panning: false,
             hovered_port: None,
@@ -146,24 +143,9 @@ impl NetworkView {
         // Get the current network (root for now)
         let network = &library.root;
 
-        // Track connection interactions
-        let mut connection_to_delete: Option<usize> = None;
-        self.hovered_connection = None;
-
-        // Draw connections first (behind nodes) and detect hover
-        for (conn_idx, conn) in network.connections.iter().enumerate() {
-            let is_hovered = self.is_connection_hovered(ui, network, conn, offset);
-            if is_hovered {
-                self.hovered_connection = Some(conn_idx);
-            }
-            self.draw_connection(&painter, network, conn, offset, is_hovered);
-        }
-
-        // Check for connection deletion (right-click on hovered connection)
-        if let Some(conn_idx) = self.hovered_connection {
-            if ui.input(|i| i.pointer.button_clicked(egui::PointerButton::Secondary)) {
-                connection_to_delete = Some(conn_idx);
-            }
+        // Draw connections first (behind nodes)
+        for conn in network.connections.iter() {
+            self.draw_connection(&painter, network, conn, offset);
         }
 
         // Draw connection being created
@@ -440,11 +422,6 @@ impl NetworkView {
         // Create connection if needed
         if let Some((from, to, port)) = connection_to_create {
             library.root.connections.push(Connection::new(from, to, port));
-        }
-
-        // Delete connection if needed
-        if let Some(conn_idx) = connection_to_delete {
-            library.root.connections.remove(conn_idx);
         }
 
         // Handle delete key for selected nodes (but not when editing text)
@@ -868,57 +845,8 @@ impl NetworkView {
         let size = NODE_ICON_SIZE * self.pan_zoom.zoom;
         self.icon_cache.draw_icon_zoomed(ctx, painter, pos, size, self.pan_zoom.zoom, function, category);
     }
-
-    /// Check if a connection is being hovered (using vertical bezier curve).
-    fn is_connection_hovered(
-        &self,
-        ui: &egui::Ui,
-        network: &Node,
-        conn: &Connection,
-        offset: Vec2,
-    ) -> bool {
-        let from_node = network.child(&conn.output_node);
-        let to_node = network.child(&conn.input_node);
-
-        if let (Some(from), Some(to)) = (from_node, to_node) {
-            let from_pos = self.node_output_center(from, offset);
-            let port_index = to
-                .inputs
-                .iter()
-                .position(|p| p.name == conn.input_port)
-                .unwrap_or(0);
-            let to_pos = self.node_input_center(to, port_index, offset);
-
-            // Check if mouse is near the bezier curve
-            if let Some(mouse_pos) = ui.input(|i| i.pointer.hover_pos()) {
-                let dy = (to_pos.y - from_pos.y).abs();
-                if dy < GRID_CELL_SIZE * self.pan_zoom.zoom {
-                    // Short connection: check distance to line segment
-                    let line_dist = point_to_line_distance(mouse_pos, from_pos, to_pos);
-                    if line_dist < 8.0 * self.pan_zoom.zoom {
-                        return true;
-                    }
-                } else {
-                    // Vertical bezier curve - sample and check distance
-                    let half_dx = (to_pos.x - from_pos.x).abs() / 2.0;
-                    let ctrl1 = Pos2::new(from_pos.x, from_pos.y + half_dx.max(30.0 * self.pan_zoom.zoom));
-                    let ctrl2 = Pos2::new(to_pos.x, to_pos.y - half_dx.max(30.0 * self.pan_zoom.zoom));
-
-                    for i in 0..32 {
-                        let t = i as f32 / 31.0;
-                        let pt = cubic_bezier(from_pos, ctrl1, ctrl2, to_pos, t);
-                        if pt.distance(mouse_pos) < 8.0 * self.pan_zoom.zoom {
-                            return true;
-                        }
-                    }
-                }
-            }
-        }
-        false
-    }
-
     /// Draw a connection between nodes.
-    fn draw_connection(&self, painter: &egui::Painter, network: &Node, conn: &Connection, offset: Vec2, is_hovered: bool) {
+    fn draw_connection(&self, painter: &egui::Painter, network: &Node, conn: &Connection, offset: Vec2) {
         // Find the source and target nodes
         let from_node = network.child(&conn.output_node);
         let to_node = network.child(&conn.input_node);
@@ -935,14 +863,8 @@ impl NetworkView {
                 .map(|p| &p.port_type)
                 .unwrap_or(&PortType::Geometry);
 
-            let color = if is_hovered {
-                theme::CONNECTION_HOVER
-            } else {
-                self.port_type_color(port_type)
-            };
-
-            let width = if is_hovered { 3.0 } else { 2.0 };
-            self.draw_wire_with_width(painter, from_pos, to_pos, color, width);
+            let color = self.port_type_color(port_type);
+            self.draw_wire_with_width(painter, from_pos, to_pos, color, 2.0);
         }
     }
 
@@ -1046,16 +968,4 @@ fn cubic_bezier(p0: Pos2, p1: Pos2, p2: Pos2, p3: Pos2, t: f32) -> Pos2 {
 fn is_hidden_port(_port_type: &PortType) -> bool {
     // For now, show all ports. Can be extended to hide certain types.
     false
-}
-
-/// Calculate the distance from a point to a line segment.
-fn point_to_line_distance(point: Pos2, line_start: Pos2, line_end: Pos2) -> f32 {
-    let line = line_end - line_start;
-    let len_sq = line.length_sq();
-    if len_sq == 0.0 {
-        return point.distance(line_start);
-    }
-    let t = ((point - line_start).dot(line) / len_sq).clamp(0.0, 1.0);
-    let projection = line_start + line * t;
-    point.distance(projection)
 }
