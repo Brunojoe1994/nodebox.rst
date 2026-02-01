@@ -49,3 +49,6 @@ thiserror = "1.0"
 # Testing
 proptest = "1.4"
 approx = "0.5"
+
+# GPU rendering (optional)
+vello = "0.7"

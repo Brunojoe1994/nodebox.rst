@@ -10,6 +10,14 @@
 //! - Integration tests with egui_kittest
 //!
 //! Use `NodeBoxApp::new_for_testing()` to create a testable app instance.
+//!
+//! # GPU Rendering
+//!
+//! When the `gpu-rendering` feature is enabled, this crate provides GPU-accelerated
+//! vector rendering via Vello. The following modules become available:
+//!
+//! - `vello_convert` - Geometry conversion from nodebox-core to Vello types
+//! - `vello_renderer` - High-level Vello renderer wrapper
 
 mod address_bar;
 mod animation_bar;
@@ -31,6 +39,12 @@ mod theme;
 mod timeline;
 mod viewer_pane;
 
+// GPU rendering modules (feature-gated)
+#[cfg(feature = "gpu-rendering")]
+pub mod vello_convert;
+#[cfg(feature = "gpu-rendering")]
+pub mod vello_renderer;
+
 // Re-export key types for testing and external use
 pub use app::NodeBoxApp;
 pub use history::History;
@@ -40,3 +54,9 @@ pub use state::{populate_default_ports, AppState};
 pub use nodebox_core::geometry::{Color, Path, Point};
 pub use nodebox_core::node::{Connection, Node, NodeLibrary, Port};
 pub use nodebox_core::Value;
+
+// Re-export GPU rendering types when feature is enabled
+#[cfg(feature = "gpu-rendering")]
+pub use vello_convert::{convert_paths, VelloPath};
+#[cfg(feature = "gpu-rendering")]
+pub use vello_renderer::{VelloConfig, VelloError, VelloRenderer, ViewTransform};
