@@ -11,6 +11,7 @@ mod eval;
 mod export;
 mod handles;
 mod history;
+mod icon_cache;
 mod native_menu;
 mod network_view;
 mod node_library;

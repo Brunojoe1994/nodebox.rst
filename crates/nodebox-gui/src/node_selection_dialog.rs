@@ -1,8 +1,9 @@
 //! Modal node selection dialog with search and category filtering.
 
-use eframe::egui::{self, Color32, Key, Rect, Vec2};
+use eframe::egui::{self, Color32, Key, Vec2};
 use nodebox_core::geometry::{Color, Point};
 use nodebox_core::node::{Node, NodeLibrary, Port};
+use crate::icon_cache::IconCache;
 use crate::theme;
 
 /// Available node types that can be created.
@@ -244,7 +245,7 @@ impl NodeSelectionDialog {
     }
 
     /// Show the dialog. Returns the selected template if one was chosen.
-    pub fn show(&mut self, ctx: &egui::Context, library: &NodeLibrary) -> Option<Node> {
+    pub fn show(&mut self, ctx: &egui::Context, library: &NodeLibrary, icon_cache: &mut IconCache) -> Option<Node> {
         if !self.visible {
             return None;
         }
@@ -361,13 +362,17 @@ impl NodeSelectionDialog {
                                 ui.painter().rect_filled(response.rect, 2.0, bg_color);
                             }
 
-                            // Icon (colored by category)
-                            let icon_rect = Rect::from_min_size(
-                                response.rect.min + Vec2::new(8.0, 6.0),
-                                Vec2::splat(20.0),
+                            // Icon (loaded from libraries or fallback)
+                            let icon_pos = response.rect.min + Vec2::new(8.0, 6.0);
+                            let function = format!("corevector/{}", template.name);
+                            icon_cache.draw_icon(
+                                ctx,
+                                ui.painter(),
+                                icon_pos,
+                                20.0,
+                                Some(&function),
+                                template.category,
                             );
-                            let icon_color = category_color(template.category);
-                            ui.painter().rect_filled(icon_rect, 3.0, icon_color);
 
                             // Name
                             ui.painter().text(
@@ -432,16 +437,6 @@ impl NodeSelectionDialog {
         }
 
         result
-    }
-}
-
-/// Get color for a category.
-fn category_color(category: &str) -> Color32 {
-    match category {
-        "geometry" => Color32::from_rgb(20, 20, 20),
-        "transform" => Color32::from_rgb(119, 154, 173),
-        "color" => Color32::from_rgb(94, 85, 112),
-        _ => Color32::from_rgb(52, 85, 129),
     }
 }
 

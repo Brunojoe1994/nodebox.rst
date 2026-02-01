@@ -5,6 +5,7 @@ use nodebox_core::geometry::Point;
 use crate::address_bar::AddressBar;
 use crate::animation_bar::AnimationBar;
 use crate::history::History;
+use crate::icon_cache::IconCache;
 use crate::network_view::{NetworkAction, NetworkView};
 use crate::node_selection_dialog::NodeSelectionDialog;
 use crate::panels::ParameterPanel;
@@ -22,6 +23,8 @@ pub struct NodeBoxApp {
     parameters: ParameterPanel,
     animation_bar: AnimationBar,
     node_dialog: NodeSelectionDialog,
+    /// Shared icon cache for the node selection dialog.
+    icon_cache: IconCache,
     history: History,
     /// Previous library state for detecting changes.
     previous_library_hash: u64,
@@ -62,6 +65,7 @@ impl NodeBoxApp {
             parameters: ParameterPanel::new(),
             animation_bar: AnimationBar::new(),
             node_dialog: NodeSelectionDialog::new(),
+            icon_cache: IconCache::new(),
             history: History::new(),
             previous_library_hash: hash,
             render_worker: RenderWorkerHandle::spawn(),
@@ -86,6 +90,7 @@ impl NodeBoxApp {
             parameters: ParameterPanel::new(),
             animation_bar: AnimationBar::new(),
             node_dialog: NodeSelectionDialog::new(),
+            icon_cache: IconCache::new(),
             history: History::new(),
             previous_library_hash: hash,
             render_worker: RenderWorkerHandle::spawn(),
@@ -111,6 +116,7 @@ impl NodeBoxApp {
             parameters: ParameterPanel::new(),
             animation_bar: AnimationBar::new(),
             node_dialog: NodeSelectionDialog::new(),
+            icon_cache: IconCache::new(),
             history: History::new(),
             previous_library_hash: hash,
             render_worker: RenderWorkerHandle::spawn(),
@@ -475,7 +481,7 @@ impl eframe::App for NodeBoxApp {
 
         // 6. Node selection dialog
         if self.node_dialog.visible {
-            if let Some(new_node) = self.node_dialog.show(ctx, &self.state.library) {
+            if let Some(new_node) = self.node_dialog.show(ctx, &self.state.library, &mut self.icon_cache) {
                 let node_name = new_node.name.clone();
                 self.state.library.root.children.push(new_node);
                 // Select the new node
