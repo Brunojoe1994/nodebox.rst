@@ -161,6 +161,44 @@ pub fn new_for_testing() -> Self { ... }
 - `ui.allocate_ui_at_rect(rect, |ui| { ... })` is deprecated
 - Use `ui.allocate_new_ui(egui::UiBuilder::new().max_rect(rect), |ui| { ... })` instead
 
+### Fixed-size DragValue widgets
+DragValue shifts by a few pixels when entering text edit mode due to different padding between button and text edit states. To prevent this:
+
+```rust
+// Save original state
+let old_visuals = ui.visuals().clone();
+let old_spacing = ui.spacing().clone();
+
+// Set expansion=0 on all widget states to prevent size changes
+ui.visuals_mut().widgets.inactive.expansion = 0.0;
+ui.visuals_mut().widgets.hovered.expansion = 0.0;
+ui.visuals_mut().widgets.active.expansion = 0.0;
+ui.visuals_mut().widgets.noninteractive.expansion = 0.0;
+
+// Use consistent padding for button and text edit modes
+ui.spacing_mut().button_padding = egui::vec2(4.0, 2.0);
+
+// Allocate exact size first, then place widget inside
+let (rect, _) = ui.allocate_exact_size(
+    egui::vec2(width, height),
+    egui::Sense::hover(),
+);
+let response = ui.put(rect, egui::DragValue::new(value).range(range));
+
+// Restore original state
+*ui.visuals_mut() = old_visuals;
+*ui.spacing_mut() = old_spacing;
+```
+
+### Styling widgets to follow the style guide
+When styling egui widgets (DragValue, checkbox, etc.) to match the style guide:
+
+1. Override `bg_fill` AND `weak_bg_fill` - some widgets use one or the other
+2. Set `bg_stroke = Stroke::NONE` to remove borders
+3. Set `rounding = Rounding::ZERO` for sharp corners
+4. Override ALL states: `inactive`, `hovered`, `active`, `noninteractive`
+5. Save and restore both `visuals` and `spacing` to avoid affecting other widgets
+
 ## Build Commands
 
 ### Excluding problematic crates
