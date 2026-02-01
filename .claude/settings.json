@@ -1,16 +1,16 @@
 {
-  "permissions": {
-    "allow": [
-      "Bash(git:*)",
-      "Bash(cargo:*)",
-      "Bash(gh:*)",
-      "Bash(ls:*)",
-      "Bash(cat:*)",
-      "Bash(rg:*)",
-      "Bash(find:*)",
-      "Bash(grep:*)",
-      "WebSearch",
-      "WebFetch(domain:docs.rs)"
-    ]
+    "permissions": {
+      "allow": [
+        "Bash(git *)",
+        "Bash(cargo *)",
+        "Bash(gh *)",
+        "Bash(ls *)",
+        "Bash(cat *)",
+        "Bash(rg *)",
+        "Bash(find *)",
+        "Bash(grep *)",
+        "WebSearch",
+        "WebFetch(domain:docs.rs)"
+      ]
+    }
   }
-}

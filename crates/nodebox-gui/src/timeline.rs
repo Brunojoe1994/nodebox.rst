@@ -4,8 +4,10 @@
 
 #![allow(dead_code)]
 
-use eframe::egui::{self, Color32, Pos2, Stroke, Vec2};
+use eframe::egui::{self, Pos2, Stroke, Vec2};
 use std::time::{Duration, Instant};
+
+use crate::theme;
 
 /// Animation playback state.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -257,11 +259,11 @@ impl Timeline {
         let rect = response.rect;
 
         // Draw background
-        painter.rect_filled(rect, 2.0, Color32::from_rgb(30, 30, 30));
+        painter.rect_filled(rect, 0.0, theme::TIMELINE_BG);
 
         // Draw frame markers
         let frame_width = rect.width() / (self.end_frame - self.start_frame + 1) as f32;
-        let marker_color = Color32::from_rgb(60, 60, 60);
+        let marker_color = theme::TIMELINE_MARKER;
 
         for i in 0..=(self.end_frame - self.start_frame) {
             let x = rect.left() + i as f32 * frame_width;
@@ -276,7 +278,7 @@ impl Timeline {
                     egui::Align2::LEFT_TOP,
                     (self.start_frame + i).to_string(),
                     egui::FontId::proportional(9.0),
-                    Color32::GRAY,
+                    theme::TEXT_SUBDUED,
                 );
             }
         }
@@ -285,7 +287,7 @@ impl Timeline {
         let playhead_x = rect.left() + (self.frame - self.start_frame) as f32 * frame_width + frame_width / 2.0;
         painter.line_segment(
             [Pos2::new(playhead_x, rect.top()), Pos2::new(playhead_x, rect.bottom())],
-            Stroke::new(2.0, Color32::from_rgb(255, 100, 100)),
+            Stroke::new(2.0, theme::TIMELINE_PLAYHEAD),
         );
 
         // Draw playhead triangle
@@ -297,7 +299,7 @@ impl Timeline {
         ];
         painter.add(egui::Shape::convex_polygon(
             triangle,
-            Color32::from_rgb(255, 100, 100),
+            theme::TIMELINE_PLAYHEAD,
             Stroke::NONE,
         ));
 

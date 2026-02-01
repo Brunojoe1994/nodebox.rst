@@ -11,10 +11,6 @@ authors.workspace = true
 name = "nodebox_gui"
 path = "src/lib.rs"
 
-[[bin]]
-name = "nodebox-gui"
-path = "src/main.rs"
-
 [dependencies]
 nodebox-core = { path = "../nodebox-core" }
 nodebox-ops = { path = "../nodebox-ops" }

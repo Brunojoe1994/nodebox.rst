@@ -4,8 +4,10 @@ use eframe::egui::{self, Pos2, Rect, Vec2};
 use nodebox_core::geometry::Point;
 use crate::address_bar::AddressBar;
 use crate::animation_bar::AnimationBar;
+use crate::components;
 use crate::history::History;
 use crate::icon_cache::IconCache;
+use crate::native_menu::{MenuAction, NativeMenuHandle};
 use crate::network_view::{NetworkAction, NetworkView};
 use crate::node_selection_dialog::NodeSelectionDialog;
 use crate::panels::ParameterPanel;
@@ -34,17 +36,23 @@ pub struct NodeBoxApp {
     render_state: RenderState,
     /// Whether a render is pending (needs to be dispatched).
     render_pending: bool,
+    /// Native menu handle for macOS system menu bar.
+    native_menu: Option<NativeMenuHandle>,
 }
 
 impl NodeBoxApp {
     /// Create a new NodeBox application instance.
     #[allow(dead_code)]
     pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
-        Self::new_with_file(_cc, None)
+        Self::new_with_file(_cc, None, None)
     }
 
     /// Create a new NodeBox application instance, optionally loading an initial file.
-    pub fn new_with_file(cc: &eframe::CreationContext<'_>, initial_file: Option<std::path::PathBuf>) -> Self {
+    pub fn new_with_file(
+        cc: &eframe::CreationContext<'_>,
+        initial_file: Option<std::path::PathBuf>,
+        native_menu: Option<NativeMenuHandle>,
+    ) -> Self {
         // Configure the global theme/style
         theme::configure_style(&cc.egui_ctx);
 
@@ -72,6 +80,7 @@ impl NodeBoxApp {
             render_worker: RenderWorkerHandle::spawn(),
             render_state: RenderState::new(),
             render_pending: false, // Initial geometry is already evaluated in AppState::new()
+            native_menu,
         }
     }
 
@@ -98,6 +107,7 @@ impl NodeBoxApp {
             render_worker: RenderWorkerHandle::spawn(),
             render_state: RenderState::new(),
             render_pending: false,
+            native_menu: None,
         }
     }
 
@@ -125,6 +135,7 @@ impl NodeBoxApp {
             render_worker: RenderWorkerHandle::spawn(),
             render_state: RenderState::new(),
             render_pending: false,
+            native_menu: None,
         }
     }
 
@@ -246,7 +257,42 @@ impl NodeBoxApp {
         }
     }
 
+    /// Handle a menu action from the native menu bar.
+    fn handle_menu_action(&mut self, action: MenuAction, ctx: &egui::Context) {
+        match action {
+            MenuAction::New => self.state.new_document(),
+            MenuAction::Open => self.open_file(),
+            MenuAction::Save => self.save_file(),
+            MenuAction::SaveAs => self.save_file_as(),
+            MenuAction::ExportPng => self.export_png(),
+            MenuAction::ExportSvg => self.export_svg(),
+            MenuAction::Undo => {
+                if let Some(previous) = self.history.undo(&self.state.library) {
+                    self.state.library = previous;
+                    self.previous_library_hash = Self::hash_library(&self.state.library);
+                    self.render_pending = true;
+                }
+            }
+            MenuAction::Redo => {
+                if let Some(next) = self.history.redo(&self.state.library) {
+                    self.state.library = next;
+                    self.previous_library_hash = Self::hash_library(&self.state.library);
+                    self.render_pending = true;
+                }
+            }
+            MenuAction::ZoomIn => self.viewer_pane.zoom_in(),
+            MenuAction::ZoomOut => self.viewer_pane.zoom_out(),
+            MenuAction::ZoomReset => self.viewer_pane.reset_zoom(),
+            MenuAction::About => self.state.show_about = true,
+            // Clipboard actions handled by system
+            MenuAction::Cut | MenuAction::Copy | MenuAction::Paste |
+            MenuAction::Delete | MenuAction::SelectAll => {}
+        }
+        ctx.request_repaint();
+    }
+
     /// Show the menu bar.
+    #[cfg(not(target_os = "macos"))]
     fn show_menu_bar(&mut self, ui: &mut egui::Ui, ctx: &egui::Context) {
         egui::menu::bar(ui, |ui| {
             ui.menu_button("File", |ui| {
@@ -346,6 +392,13 @@ impl NodeBoxApp {
 
 impl eframe::App for NodeBoxApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        // Poll for native menu events (macOS system menu bar)
+        if let Some(ref native_menu) = self.native_menu {
+            if let Some(action) = native_menu.poll_event() {
+                self.handle_menu_action(action, ctx);
+            }
+        }
+
         // Poll for background render results
         self.poll_render_results();
 
@@ -354,7 +407,8 @@ impl eframe::App for NodeBoxApp {
             ctx.request_repaint();
         }
 
-        // 1. Menu bar (top-most) - clean frame, no extra borders
+        // 1. Menu bar (top-most) - only show in-window menu on non-macOS platforms
+        #[cfg(not(target_os = "macos"))]
         egui::TopBottomPanel::top("menu_bar")
             .frame(egui::Frame::none().fill(theme::PANEL_BG))
             .show(ctx, |ui| {
@@ -415,19 +469,9 @@ impl eframe::App for NodeBoxApp {
                     self.parameters.show(ui, &mut self.state);
                 });
 
-                // Single clean separator between sections
-                let sep_y = available.min.y + split_y;
-                ui.painter().line_segment(
-                    [
-                        Pos2::new(available.min.x, sep_y),
-                        Pos2::new(available.max.x, sep_y),
-                    ],
-                    egui::Stroke::new(1.0, theme::BORDER_COLOR),
-                );
-
-                // Bottom: Network pane
+                // Bottom: Network pane (headers have their own borders)
                 let network_rect = Rect::from_min_max(
-                    Pos2::new(available.min.x, available.min.y + split_y + 1.0),
+                    Pos2::new(available.min.x, available.min.y + split_y),
                     available.max,
                 );
 
@@ -435,68 +479,18 @@ impl eframe::App for NodeBoxApp {
                     ui.set_clip_rect(network_rect);
 
                     // Network header with "+ New Node" button
-                    let header_height = theme::PANE_HEADER_HEIGHT;
-                    let (header_rect, _) = ui.allocate_exact_size(
-                        egui::vec2(ui.available_width(), header_height),
-                        egui::Sense::hover(),
-                    );
-
-                    // Header background
-                    ui.painter().rect_filled(header_rect, 0.0, theme::PANE_HEADER_BACKGROUND_COLOR);
-
-                    // "NETWORK" title on left
-                    let title_font = egui::FontId::proportional(10.0);
-                    let title_text = "NETWORK";
-                    let title_galley = ui.painter().layout_no_wrap(
-                        title_text.to_string(),
-                        title_font.clone(),
-                        theme::PANE_HEADER_FOREGROUND_COLOR,
-                    );
-                    let title_x = header_rect.left() + theme::PADDING;
-                    ui.painter().galley(
-                        egui::pos2(title_x, header_rect.center().y - title_galley.size().y / 2.0),
-                        title_galley.clone(),
-                        theme::PANE_HEADER_FOREGROUND_COLOR,
-                    );
-
-                    // Vertical separator line (1px, mid-gray) - 8px after NETWORK
-                    let sep_x = title_x + title_galley.size().x + 8.0;
-                    ui.painter().line_segment(
-                        [
-                            egui::pos2(sep_x, header_rect.top() + 4.0),
-                            egui::pos2(sep_x, header_rect.bottom() - 4.0),
-                        ],
-                        egui::Stroke::new(1.0, theme::TEXT_DISABLED),
-                    );
+                    let (header_rect, x) = components::draw_pane_header_with_title(ui, "Network");
 
                     // "+ New Node" button after the separator
-                    let button_text = "+ New Node";
-                    let button_font = egui::FontId::proportional(10.0);
-                    let button_width = 70.0;
-                    let button_x = sep_x + 8.0;
-
-                    // Button area
-                    let button_rect = egui::Rect::from_min_size(
-                        egui::pos2(button_x, header_rect.top()),
-                        egui::vec2(button_width, header_height),
-                    );
-                    let button_response = ui.interact(button_rect, ui.id().with("new_node_btn"), egui::Sense::click());
-
-                    // Button text (changes color on hover)
-                    let button_color = if button_response.hovered() {
-                        theme::TEXT_STRONG
-                    } else {
-                        theme::PANE_HEADER_FOREGROUND_COLOR
-                    };
-                    ui.painter().text(
-                        button_rect.left_center(),
-                        egui::Align2::LEFT_CENTER,
-                        button_text,
-                        button_font,
-                        button_color,
+                    let (clicked, _) = components::header_text_button(
+                        ui,
+                        header_rect,
+                        x,
+                        "+ New Node",
+                        70.0,
                     );
 
-                    if button_response.clicked() {
+                    if clicked {
                         self.node_dialog.open(Point::new(0.0, 0.0));
                     }
 

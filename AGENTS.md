@@ -45,65 +45,42 @@ Prereqs: Java JDK and Apache Ant are required; Maven is used for dependency reso
 
 ## UI Design System (Rust GUI)
 
-The NodeBox GUI uses a design token system inspired by Rerun. All design constants are centralized in `crates/nodebox-gui/src/theme.rs`.
+**IMPORTANT: When working on any GUI component, always consult `STYLE_GUIDE.md` first.**
 
-### Color Tokens
-Always use semantic color tokens from `theme.rs` instead of hardcoded hex values:
+The NodeBox GUI follows a **Linear-inspired design philosophy**:
 
-**Backgrounds:**
-- `PANEL_BG` - Main panel background (dark)
-- `TOP_BAR_BG` - Title bar background
-- `TAB_BAR_BG` - Tab bar background
-- `HOVER_BG` - Hover state background
-- `SELECTION_BG` - Selection highlight (blue)
+- **Sharp & geometric** — 90° angles, straight lines, zero corner radius by default
+- **No borders** — use background color differentiation between panels
+- **Violet accent** — purple/violet for selections, links, and highlights
+- **Deep dark theme** — rich blacks with subtle cool undertones
+- **Subtle rounding only for selections** — 4px rounding on selected/hovered items
 
-**Text:**
-- `TEXT_STRONG` - Active/primary text (brightest)
-- `TEXT_DEFAULT` - Regular body text
-- `TEXT_SUBDUED` - Secondary/muted text
-- `TEXT_DISABLED` - Disabled text
+### Quick Reference
 
-**Widgets:**
-- `WIDGET_INACTIVE_BG` - Default widget background
-- `WIDGET_HOVERED_BG` - Hovered widget background
-- `WIDGET_ACTIVE_BG` - Active/pressed widget background
-- `BORDER_COLOR` - Standard border color
+All tokens are in `crates/nodebox-gui/src/theme.rs`. Key patterns:
 
-**Accents:**
-- `BLUE_400` / `BLUE_500` - Primary accent (selection, links)
-- `SUCCESS_GREEN`, `WARNING_ORANGE`, `ERROR_RED` - Status colors
+```rust
+use crate::theme::{
+    // Backgrounds (layered, darkest to lightest)
+    PANEL_BG, TAB_BAR_BG, SURFACE_ELEVATED, HOVER_BG, SELECTION_BG,
 
-### Spacing (4px Grid)
-All spacing should be multiples of 4px:
-- `PADDING_SMALL` = 4px
-- `PADDING` = 8px (standard)
-- `PADDING_LARGE` = 12px
-- `VIEW_PADDING` = 12px (panel margins)
-- `ITEM_SPACING` = 8px
-- `INDENT` = 12px (hierarchy indent)
+    // Text (brightest to dimmest)
+    TEXT_STRONG, TEXT_DEFAULT, TEXT_SUBDUED, TEXT_DISABLED,
 
-### Typography
-- `FONT_SIZE_BASE` = 12px (body text)
-- `FONT_SIZE_SMALL` = 11px
-- `FONT_SIZE_HEADING` = 16px
+    // Accents
+    VIOLET_400, VIOLET_500, VIOLET_900,
 
-### Layout Heights
-- `TOP_BAR_HEIGHT` = 28px
-- `TITLE_BAR_HEIGHT` = 24px
-- `LIST_ITEM_HEIGHT` = 24px
-- `ROW_HEIGHT` = 22px
+    // Spacing (4px grid)
+    PADDING, PADDING_SMALL, PADDING_LARGE,
+};
+```
 
-### Corner Radii
-- `CORNER_RADIUS` = 6px (panels, windows)
-- `CORNER_RADIUS_SMALL` = 4px (buttons, widgets)
-
-### Best Practices
-1. **Use tokens, not literals** - Import from `crate::theme` and use named constants
-2. **Follow the 8px grid** - All margins and padding should align to the grid
-3. **Maintain text hierarchy** - Use `TEXT_STRONG` for emphasis, `TEXT_SUBDUED` for secondary info
-4. **Hover feedback** - Add 2px expansion + background color change on hover
-5. **Selection states** - Use `SELECTION_BG` with `BLUE_400` stroke (2px)
-6. **Call `theme::configure_style()`** - This is done in app startup; don't override global styles
+**See `STYLE_GUIDE.md` for complete documentation including:**
+- Full Linear-inspired color palette
+- Sharp corners philosophy (0px default, 4px for selections)
+- No-border panel differentiation patterns
+- Component patterns with code examples
+- Do's and Don'ts checklist
 
 ## API Design & Backwards Compatibility
 
@@ -183,6 +160,44 @@ pub fn new_for_testing() -> Self { ... }
 ### Deprecated methods
 - `ui.allocate_ui_at_rect(rect, |ui| { ... })` is deprecated
 - Use `ui.allocate_new_ui(egui::UiBuilder::new().max_rect(rect), |ui| { ... })` instead
+
+### Fixed-size DragValue widgets
+DragValue shifts by a few pixels when entering text edit mode due to different padding between button and text edit states. To prevent this:
+
+```rust
+// Save original state
+let old_visuals = ui.visuals().clone();
+let old_spacing = ui.spacing().clone();
+
+// Set expansion=0 on all widget states to prevent size changes
+ui.visuals_mut().widgets.inactive.expansion = 0.0;
+ui.visuals_mut().widgets.hovered.expansion = 0.0;
+ui.visuals_mut().widgets.active.expansion = 0.0;
+ui.visuals_mut().widgets.noninteractive.expansion = 0.0;
+
+// Use consistent padding for button and text edit modes
+ui.spacing_mut().button_padding = egui::vec2(4.0, 2.0);
+
+// Allocate exact size first, then place widget inside
+let (rect, _) = ui.allocate_exact_size(
+    egui::vec2(width, height),
+    egui::Sense::hover(),
+);
+let response = ui.put(rect, egui::DragValue::new(value).range(range));
+
+// Restore original state
+*ui.visuals_mut() = old_visuals;
+*ui.spacing_mut() = old_spacing;
+```
+
+### Styling widgets to follow the style guide
+When styling egui widgets (DragValue, checkbox, etc.) to match the style guide:
+
+1. Override `bg_fill` AND `weak_bg_fill` - some widgets use one or the other
+2. Set `bg_stroke = Stroke::NONE` to remove borders
+3. Set `rounding = Rounding::ZERO` for sharp corners
+4. Override ALL states: `inactive`, `hovered`, `active`, `noninteractive`
+5. Save and restore both `visuals` and `spacing` to avoid affecting other widgets
 
 ## Build Commands
 

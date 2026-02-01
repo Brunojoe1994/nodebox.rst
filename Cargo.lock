@@ -2992,6 +2992,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "nodebox"
+version = "0.1.0"
+dependencies = [
+ "eframe",
+ "nodebox-gui",
+]
+
+[[package]]
 name = "nodebox-cli"
 version = "0.1.0"
 dependencies = [

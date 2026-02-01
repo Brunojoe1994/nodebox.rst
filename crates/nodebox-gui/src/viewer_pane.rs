@@ -2,6 +2,7 @@
 
 use eframe::egui::{self, Color32, ColorImage, Pos2, Rect, Stroke, TextureHandle, TextureOptions, Vec2};
 use nodebox_core::geometry::{Color, Path, Point, PointType};
+use crate::components;
 use crate::handles::{FourPointHandle, HandleSet, HANDLE_COLOR};
 use crate::pan_zoom::PanZoom;
 use crate::state::AppState;
@@ -259,6 +260,11 @@ impl ViewerPane {
         self.pan_zoom.reset();
     }
 
+    /// Reset zoom to 100% (actual size).
+    pub fn reset_zoom(&mut self) {
+        self.pan_zoom.reset();
+    }
+
     /// Get a mutable reference to the handles.
     #[allow(dead_code)]
     pub fn handles_mut(&mut self) -> &mut Option<HandleSet> {
@@ -274,63 +280,95 @@ impl ViewerPane {
     /// Show the viewer pane with header tabs and toolbar.
     /// Returns any handle interaction result.
     pub fn show(&mut self, ui: &mut egui::Ui, state: &AppState) -> HandleResult {
-        // Tab bar with consistent styling
-        let tab_bar_rect = ui.available_rect_before_wrap();
-        let tab_bar_rect = Rect::from_min_size(
-            tab_bar_rect.min,
-            Vec2::new(tab_bar_rect.width(), theme::PANE_HEADER_HEIGHT),
+        // Remove spacing so content is snug against header
+        ui.spacing_mut().item_spacing = egui::vec2(0.0, 0.0);
+
+        // Draw header with "VIEWER" title and separator
+        let (header_rect, mut x) = components::draw_pane_header_with_title(ui, "Viewer");
+
+        // Tab buttons after the separator
+        let (clicked, new_x) = components::header_tab_button(
+            ui,
+            header_rect,
+            x,
+            "Data",
+            self.current_tab == ViewerTab::Data,
         );
+        if clicked {
+            self.current_tab = ViewerTab::Data;
+        }
+        x = new_x;
 
-        // Draw tab bar background
-        ui.painter().rect_filled(tab_bar_rect, 0.0, theme::PANE_HEADER_BACKGROUND_COLOR);
+        let (clicked, new_x) = components::header_tab_button(
+            ui,
+            header_rect,
+            x,
+            "Handles",
+            self.current_tab == ViewerTab::Viewer && self.show_handles,
+        );
+        if clicked && self.current_tab == ViewerTab::Viewer {
+            self.show_handles = !self.show_handles;
+        } else if clicked {
+            self.current_tab = ViewerTab::Viewer;
+        }
+        x = new_x;
 
-        ui.allocate_ui_at_rect(tab_bar_rect, |ui| {
-            ui.horizontal_centered(|ui| {
-                ui.add_space(theme::PADDING);
+        let (clicked, new_x) = components::header_tab_button(
+            ui,
+            header_rect,
+            x,
+            "Points",
+            self.current_tab == ViewerTab::Viewer && self.show_points,
+        );
+        if clicked && self.current_tab == ViewerTab::Viewer {
+            self.show_points = !self.show_points;
+        } else if clicked {
+            self.current_tab = ViewerTab::Viewer;
+        }
+        x = new_x;
 
-                // Tabs - styled as subtle text buttons
-                let viewer_color = if self.current_tab == ViewerTab::Viewer {
-                    theme::TEXT_STRONG
-                } else {
-                    theme::TEXT_SUBDUED
-                };
-                if ui
-                    .add(egui::Label::new(
-                        egui::RichText::new("Viewer").color(viewer_color).size(11.0),
-                    ).sense(egui::Sense::click()))
-                    .clicked()
-                {
-                    self.current_tab = ViewerTab::Viewer;
-                }
+        let (clicked, new_x) = components::header_tab_button(
+            ui,
+            header_rect,
+            x,
+            "Pt#",
+            self.current_tab == ViewerTab::Viewer && self.show_point_numbers,
+        );
+        if clicked && self.current_tab == ViewerTab::Viewer {
+            self.show_point_numbers = !self.show_point_numbers;
+        } else if clicked {
+            self.current_tab = ViewerTab::Viewer;
+        }
+        x = new_x;
 
-                ui.add_space(theme::PADDING_LARGE);
+        let (clicked, new_x) = components::header_tab_button(
+            ui,
+            header_rect,
+            x,
+            "Origin",
+            self.current_tab == ViewerTab::Viewer && self.show_origin,
+        );
+        if clicked && self.current_tab == ViewerTab::Viewer {
+            self.show_origin = !self.show_origin;
+        } else if clicked {
+            self.current_tab = ViewerTab::Viewer;
+        }
+        x = new_x;
 
-                let data_color = if self.current_tab == ViewerTab::Data {
-                    theme::TEXT_STRONG
-                } else {
-                    theme::TEXT_SUBDUED
-                };
-                if ui
-                    .add(egui::Label::new(
-                        egui::RichText::new("Data").color(data_color).size(11.0),
-                    ).sense(egui::Sense::click()))
-                    .clicked()
-                {
-                    self.current_tab = ViewerTab::Data;
-                }
+        let (clicked, _) = components::header_tab_button(
+            ui,
+            header_rect,
+            x,
+            "Canvas",
+            self.current_tab == ViewerTab::Viewer && self.show_canvas_border,
+        );
+        if clicked && self.current_tab == ViewerTab::Viewer {
+            self.show_canvas_border = !self.show_canvas_border;
+        } else if clicked {
+            self.current_tab = ViewerTab::Viewer;
+        }
 
-                // Spacer and toolbar (only show for Viewer tab)
-                if self.current_tab == ViewerTab::Viewer {
-                    ui.add_space(theme::PADDING_LARGE);
-                    // Subtle vertical separator
-                    ui.add_space(theme::PADDING_SMALL);
-                    self.show_toolbar(ui);
-                }
-            });
-        });
-        ui.add_space(theme::PANE_HEADER_HEIGHT);
-
-        // Content area (no additional separator)
+        // Content area (directly after header, no extra spacing)
         match self.current_tab {
             ViewerTab::Viewer => self.show_canvas(ui, state),
             ViewerTab::Data => {
@@ -338,33 +376,6 @@ impl ViewerPane {
                 HandleResult::None
             }
         }
-    }
-
-    /// Show the toolbar buttons with subtle, Figma-like styling.
-    fn show_toolbar(&mut self, ui: &mut egui::Ui) {
-        // Helper for subtle toggle buttons
-        let toggle_label = |ui: &mut egui::Ui, label: &str, active: &mut bool, tooltip: &str| {
-            let color = if *active { theme::TEXT_DEFAULT } else { theme::TEXT_DISABLED };
-            let response = ui.add(
-                egui::Label::new(
-                    egui::RichText::new(label).color(color).size(10.0),
-                ).sense(egui::Sense::click())
-            );
-            if response.clicked() {
-                *active = !*active;
-            }
-            response.on_hover_text(tooltip);
-        };
-
-        toggle_label(ui, "Handles", &mut self.show_handles, "Show/hide handles");
-        ui.add_space(theme::PADDING);
-        toggle_label(ui, "Points", &mut self.show_points, "Show/hide path points");
-        ui.add_space(theme::PADDING);
-        toggle_label(ui, "Pt#", &mut self.show_point_numbers, "Show/hide point numbers");
-        ui.add_space(theme::PADDING);
-        toggle_label(ui, "Origin", &mut self.show_origin, "Show/hide origin crosshair");
-        ui.add_space(theme::PADDING);
-        toggle_label(ui, "Canvas", &mut self.show_canvas_border, "Show/hide canvas border");
     }
 
     /// Show the canvas viewer.
@@ -446,14 +457,14 @@ impl ViewerPane {
                         origin - Vec2::new(crosshair_size, 0.0),
                         origin + Vec2::new(crosshair_size, 0.0),
                     ],
-                    Stroke::new(1.0, egui::Color32::GRAY),
+                    Stroke::new(1.0, theme::VIEWER_CROSSHAIR),
                 );
                 painter.line_segment(
                     [
                         origin - Vec2::new(0.0, crosshair_size),
                         origin + Vec2::new(0.0, crosshair_size),
                     ],
-                    Stroke::new(1.0, egui::Color32::GRAY),
+                    Stroke::new(1.0, theme::VIEWER_CROSSHAIR),
                 );
             }
         }
@@ -626,7 +637,7 @@ impl ViewerPane {
     /// Draw a background grid.
     fn draw_grid(&self, painter: &egui::Painter, rect: Rect) {
         let grid_size = 50.0 * self.pan_zoom.zoom;
-        let grid_color = egui::Color32::from_rgba_unmultiplied(200, 200, 200, 30);
+        let grid_color = theme::viewer_grid();
 
         let center = rect.center().to_vec2();
         let origin = self.pan_zoom.pan + center;
@@ -665,9 +676,9 @@ impl ViewerPane {
 
                 // Draw point marker
                 let color = match pp.point_type {
-                    PointType::LineTo => Color32::from_rgb(100, 200, 100),
-                    PointType::CurveTo => Color32::from_rgb(200, 100, 100),
-                    PointType::CurveData => Color32::from_rgb(100, 100, 200),
+                    PointType::LineTo => theme::POINT_LINE_TO,
+                    PointType::CurveTo => theme::POINT_CURVE_TO,
+                    PointType::CurveData => theme::POINT_CURVE_DATA,
                 };
                 painter.circle_filled(screen_pt, 3.0, color);
             }
