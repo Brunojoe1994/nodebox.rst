@@ -187,7 +187,7 @@ impl AnimationBar {
 
         // Clean background - seamless with panel
         let rect = ui.available_rect_before_wrap();
-        ui.painter().rect_filled(rect, 0.0, theme::PANEL_BG);
+        ui.painter().rect_filled(rect, 0.0, theme::ANIMATION_BAR_BACKGROUND);
 
         // Subtle top border only
         ui.painter().line_segment(
@@ -199,15 +199,15 @@ impl AnimationBar {
         );
 
         ui.horizontal(|ui| {
-            ui.add_space(theme::PADDING);
+            ui.add_space(theme::PADDING_SMALL);
 
-            // Compact playback controls - smaller buttons
-            if ui.small_button("⏮").on_hover_text("Rewind").clicked() {
+            // Playback control buttons - flush with bar height, transparent background
+            if self.icon_button(ui, "⏮", "Rewind") {
                 self.rewind();
                 event = AnimationEvent::Rewind;
             }
 
-            if ui.small_button("⏪").on_hover_text("Step backward").clicked() {
+            if self.icon_button(ui, "⏪", "Step backward") {
                 self.step_backward();
                 event = AnimationEvent::StepBack;
             }
@@ -217,7 +217,7 @@ impl AnimationBar {
             } else {
                 ("▶", "Play")
             };
-            if ui.small_button(play_icon).on_hover_text(play_tooltip).clicked() {
+            if self.icon_button(ui, play_icon, play_tooltip) {
                 if self.is_playing() {
                     self.pause();
                     event = AnimationEvent::Pause;
@@ -227,35 +227,31 @@ impl AnimationBar {
                 }
             }
 
-            if ui.small_button("⏩").on_hover_text("Step forward").clicked() {
+            if self.icon_button(ui, "⏩", "Step forward") {
                 self.step_forward();
                 event = AnimationEvent::StepForward;
             }
 
-            if ui.small_button("⏭").on_hover_text("Go to end").clicked() {
+            if self.icon_button(ui, "⏭", "Go to end") {
                 self.go_to_end();
                 event = AnimationEvent::GoToEnd;
             }
 
-            if ui.small_button("⏹").on_hover_text("Stop").clicked() {
+            if self.icon_button(ui, "⏹", "Stop") {
                 self.stop();
                 event = AnimationEvent::Stop;
             }
 
             ui.add_space(theme::PADDING);
 
-            // Frame counter - more compact
+            // Frame counter - width for 3+ digits
             ui.label(
                 egui::RichText::new("Frame")
                     .color(theme::TEXT_SUBDUED)
-                    .size(10.0),
+                    .size(theme::FONT_SIZE_SMALL),
             );
             let mut frame = self.frame as i32;
-            let frame_response = ui.add(
-                egui::DragValue::new(&mut frame)
-                    .range(self.start_frame as i32..=self.end_frame as i32)
-                    .speed(1.0),
-            );
+            let frame_response = Self::styled_drag_value(ui, &mut frame, self.start_frame as i32..=self.end_frame as i32, 40.0);
             if frame_response.changed() {
                 self.frame = frame as u32;
                 event = AnimationEvent::FrameChanged(self.frame as f64);
@@ -264,23 +260,19 @@ impl AnimationBar {
             ui.label(
                 egui::RichText::new(format!("/{}", self.end_frame))
                     .color(theme::TEXT_DISABLED)
-                    .size(10.0),
+                    .size(theme::FONT_SIZE_SMALL),
             );
 
             ui.add_space(theme::PADDING);
 
-            // FPS control - more compact
+            // FPS control - width for 3 digits
             ui.label(
                 egui::RichText::new("FPS")
                     .color(theme::TEXT_SUBDUED)
-                    .size(10.0),
+                    .size(theme::FONT_SIZE_SMALL),
             );
             let mut fps = self.fps as i32;
-            let fps_response = ui.add(
-                egui::DragValue::new(&mut fps)
-                    .range(1..=120)
-                    .speed(1.0),
-            );
+            let fps_response = Self::styled_drag_value(ui, &mut fps, 1..=120, 40.0);
             if fps_response.changed() {
                 self.fps = fps as u32;
                 event = AnimationEvent::FpsChanged(self.fps);
@@ -288,15 +280,140 @@ impl AnimationBar {
 
             ui.add_space(theme::PADDING);
 
-            // Loop toggle - subtle checkbox
-            ui.checkbox(&mut self.loop_enabled, "");
+            // Loop toggle
+            Self::styled_checkbox(ui, &mut self.loop_enabled);
             ui.label(
                 egui::RichText::new("Loop")
                     .color(if self.loop_enabled { theme::TEXT_DEFAULT } else { theme::TEXT_SUBDUED })
-                    .size(10.0),
+                    .size(theme::FONT_SIZE_SMALL),
             );
         });
 
         event
+    }
+
+    /// Styled DragValue that follows the style guide.
+    /// Uses SLATE_800 for subtle elevation against SLATE_900 bar background.
+    fn styled_drag_value(ui: &mut egui::Ui, value: &mut i32, range: std::ops::RangeInclusive<i32>, width: f32) -> egui::Response {
+        // Override visuals and spacing for this widget
+        let old_visuals = ui.visuals().clone();
+        let old_spacing = ui.spacing().clone();
+
+        // All states: no borders, sharp corners, appropriate fill
+        ui.visuals_mut().widgets.inactive.bg_fill = theme::SLATE_800;
+        ui.visuals_mut().widgets.inactive.weak_bg_fill = theme::SLATE_800;
+        ui.visuals_mut().widgets.inactive.bg_stroke = egui::Stroke::NONE;
+        ui.visuals_mut().widgets.inactive.fg_stroke = egui::Stroke::new(1.0, theme::TEXT_DEFAULT);
+        ui.visuals_mut().widgets.inactive.rounding = egui::Rounding::ZERO;
+        ui.visuals_mut().widgets.inactive.expansion = 0.0;
+
+        ui.visuals_mut().widgets.hovered.bg_fill = theme::SLATE_700;
+        ui.visuals_mut().widgets.hovered.weak_bg_fill = theme::SLATE_700;
+        ui.visuals_mut().widgets.hovered.bg_stroke = egui::Stroke::NONE;
+        ui.visuals_mut().widgets.hovered.fg_stroke = egui::Stroke::new(1.0, theme::TEXT_STRONG);
+        ui.visuals_mut().widgets.hovered.rounding = egui::Rounding::ZERO;
+        ui.visuals_mut().widgets.hovered.expansion = 0.0;
+
+        ui.visuals_mut().widgets.active.bg_fill = theme::SLATE_700;
+        ui.visuals_mut().widgets.active.weak_bg_fill = theme::SLATE_700;
+        ui.visuals_mut().widgets.active.bg_stroke = egui::Stroke::NONE;
+        ui.visuals_mut().widgets.active.fg_stroke = egui::Stroke::new(1.0, theme::TEXT_STRONG);
+        ui.visuals_mut().widgets.active.rounding = egui::Rounding::ZERO;
+        ui.visuals_mut().widgets.active.expansion = 0.0;
+
+        ui.visuals_mut().widgets.noninteractive.bg_fill = theme::SLATE_800;
+        ui.visuals_mut().widgets.noninteractive.weak_bg_fill = theme::SLATE_800;
+        ui.visuals_mut().widgets.noninteractive.bg_stroke = egui::Stroke::NONE;
+        ui.visuals_mut().widgets.noninteractive.rounding = egui::Rounding::ZERO;
+        ui.visuals_mut().widgets.noninteractive.expansion = 0.0;
+
+        // Use consistent padding for button and text edit modes
+        ui.spacing_mut().button_padding = egui::vec2(4.0, 2.0);
+
+        // Allocate exact size and place widget inside to prevent any shifting
+        let (rect, _) = ui.allocate_exact_size(
+            egui::vec2(width, theme::ANIMATION_BAR_HEIGHT),
+            egui::Sense::hover(),
+        );
+        let response = ui.put(
+            rect,
+            egui::DragValue::new(value)
+                .range(range)
+                .speed(1.0),
+        );
+
+        // Restore visuals and spacing
+        *ui.visuals_mut() = old_visuals;
+        *ui.spacing_mut() = old_spacing;
+
+        response
+    }
+
+    /// Styled checkbox that follows the style guide.
+    fn styled_checkbox(ui: &mut egui::Ui, checked: &mut bool) -> egui::Response {
+        // Override visuals for this widget
+        let old_visuals = ui.visuals().clone();
+
+        ui.visuals_mut().widgets.inactive.bg_fill = theme::SLATE_800;
+        ui.visuals_mut().widgets.inactive.weak_bg_fill = theme::SLATE_800;
+        ui.visuals_mut().widgets.inactive.bg_stroke = egui::Stroke::NONE;
+        ui.visuals_mut().widgets.inactive.rounding = egui::Rounding::ZERO;
+
+        ui.visuals_mut().widgets.hovered.bg_fill = theme::SLATE_700;
+        ui.visuals_mut().widgets.hovered.weak_bg_fill = theme::SLATE_700;
+        ui.visuals_mut().widgets.hovered.bg_stroke = egui::Stroke::NONE;
+        ui.visuals_mut().widgets.hovered.rounding = egui::Rounding::ZERO;
+
+        ui.visuals_mut().widgets.active.bg_fill = theme::SLATE_700;
+        ui.visuals_mut().widgets.active.weak_bg_fill = theme::SLATE_700;
+        ui.visuals_mut().widgets.active.bg_stroke = egui::Stroke::NONE;
+        ui.visuals_mut().widgets.active.rounding = egui::Rounding::ZERO;
+
+        ui.visuals_mut().widgets.noninteractive.bg_fill = theme::SLATE_800;
+        ui.visuals_mut().widgets.noninteractive.weak_bg_fill = theme::SLATE_800;
+        ui.visuals_mut().widgets.noninteractive.bg_stroke = egui::Stroke::NONE;
+        ui.visuals_mut().widgets.noninteractive.rounding = egui::Rounding::ZERO;
+
+        let response = ui.checkbox(checked, "");
+
+        // Restore visuals
+        *ui.visuals_mut() = old_visuals;
+
+        response
+    }
+
+    /// Custom icon button with transparent background and hover effect.
+    /// Returns true if clicked.
+    fn icon_button(&self, ui: &mut egui::Ui, icon: &str, tooltip: &str) -> bool {
+        let button_size = egui::vec2(theme::ANIMATION_BAR_HEIGHT, theme::ANIMATION_BAR_HEIGHT);
+        let (rect, response) = ui.allocate_exact_size(button_size, egui::Sense::click());
+
+        if ui.is_rect_visible(rect) {
+            // Transparent background, lighter on hover
+            let bg_color = if response.hovered() {
+                theme::SLATE_800
+            } else {
+                egui::Color32::TRANSPARENT
+            };
+
+            ui.painter().rect_filled(rect, 0.0, bg_color);
+
+            // Icon color - brighter on hover
+            let text_color = if response.hovered() {
+                theme::TEXT_STRONG
+            } else {
+                theme::TEXT_DEFAULT
+            };
+
+            ui.painter().text(
+                rect.center(),
+                egui::Align2::CENTER_CENTER,
+                icon,
+                egui::FontId::proportional(theme::FONT_SIZE_BASE),
+                text_color,
+            );
+        }
+
+        response.on_hover_text(tooltip).clicked()
     }
 }

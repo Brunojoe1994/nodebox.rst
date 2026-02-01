@@ -72,8 +72,12 @@ impl Default for NetworkView {
 impl NetworkView {
     /// Create a new network view.
     pub fn new() -> Self {
+        // Start with an initial pan offset so the first grid lines don't hug the edges.
+        let mut pan_zoom = PanZoom::with_zoom_limits(0.25, 4.0);
+        pan_zoom.pan = Vec2::new(-1.0, -1.0);
+
         Self {
-            pan_zoom: PanZoom::with_zoom_limits(0.25, 4.0),
+            pan_zoom,
             selected: HashSet::new(),
             is_dragging_selection: false,
             creating_connection: None,
