@@ -285,7 +285,7 @@ impl NodeSelectionDialog {
             .collapsible(false)
             .resizable(false)
             .title_bar(false) // Custom title bar
-            .fixed_size([360.0, 340.0])
+            .fixed_size([500.0, 400.0])
             .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
             .frame(dialog_frame)
             .show(ctx, |ui| {
@@ -390,7 +390,7 @@ impl NodeSelectionDialog {
 
                 // Node list - clean, minimal styling
                 egui::ScrollArea::vertical()
-                    .max_height(220.0)
+                    .auto_shrink([false, false])
                     .show(ui, |ui| {
                         for (list_idx, &template_idx) in self.filtered_indices.iter().enumerate() {
                             let template = &NODE_TEMPLATES[template_idx];
