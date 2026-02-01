@@ -295,8 +295,9 @@ impl AnimationBar {
     /// Styled DragValue that follows the style guide.
     /// Uses SLATE_800 for subtle elevation against SLATE_900 bar background.
     fn styled_drag_value(ui: &mut egui::Ui, value: &mut i32, range: std::ops::RangeInclusive<i32>, width: f32) -> egui::Response {
-        // Override visuals for this widget - use SLATE_800 for subtle elevation
+        // Override visuals and spacing for this widget
         let old_visuals = ui.visuals().clone();
+        let old_spacing = ui.spacing().clone();
 
         // All states: no borders, sharp corners, appropriate fill
         ui.visuals_mut().widgets.inactive.bg_fill = theme::SLATE_800;
@@ -304,23 +305,30 @@ impl AnimationBar {
         ui.visuals_mut().widgets.inactive.bg_stroke = egui::Stroke::NONE;
         ui.visuals_mut().widgets.inactive.fg_stroke = egui::Stroke::new(1.0, theme::TEXT_DEFAULT);
         ui.visuals_mut().widgets.inactive.rounding = egui::Rounding::ZERO;
+        ui.visuals_mut().widgets.inactive.expansion = 0.0;
 
         ui.visuals_mut().widgets.hovered.bg_fill = theme::SLATE_700;
         ui.visuals_mut().widgets.hovered.weak_bg_fill = theme::SLATE_700;
         ui.visuals_mut().widgets.hovered.bg_stroke = egui::Stroke::NONE;
         ui.visuals_mut().widgets.hovered.fg_stroke = egui::Stroke::new(1.0, theme::TEXT_STRONG);
         ui.visuals_mut().widgets.hovered.rounding = egui::Rounding::ZERO;
+        ui.visuals_mut().widgets.hovered.expansion = 0.0;
 
         ui.visuals_mut().widgets.active.bg_fill = theme::SLATE_700;
         ui.visuals_mut().widgets.active.weak_bg_fill = theme::SLATE_700;
         ui.visuals_mut().widgets.active.bg_stroke = egui::Stroke::NONE;
         ui.visuals_mut().widgets.active.fg_stroke = egui::Stroke::new(1.0, theme::TEXT_STRONG);
         ui.visuals_mut().widgets.active.rounding = egui::Rounding::ZERO;
+        ui.visuals_mut().widgets.active.expansion = 0.0;
 
         ui.visuals_mut().widgets.noninteractive.bg_fill = theme::SLATE_800;
         ui.visuals_mut().widgets.noninteractive.weak_bg_fill = theme::SLATE_800;
         ui.visuals_mut().widgets.noninteractive.bg_stroke = egui::Stroke::NONE;
         ui.visuals_mut().widgets.noninteractive.rounding = egui::Rounding::ZERO;
+        ui.visuals_mut().widgets.noninteractive.expansion = 0.0;
+
+        // Use consistent padding for button and text edit modes
+        ui.spacing_mut().button_padding = egui::vec2(4.0, 2.0);
 
         // Allocate exact size and place widget inside to prevent any shifting
         let (rect, _) = ui.allocate_exact_size(
@@ -334,8 +342,9 @@ impl AnimationBar {
                 .speed(1.0),
         );
 
-        // Restore visuals
+        // Restore visuals and spacing
         *ui.visuals_mut() = old_visuals;
+        *ui.spacing_mut() = old_spacing;
 
         response
     }
