@@ -420,21 +420,66 @@ impl eframe::App for NodeBoxApp {
 
                 ui.allocate_new_ui(egui::UiBuilder::new().max_rect(network_rect), |ui| {
                     ui.set_clip_rect(network_rect);
-                    // Consistent section header with action button
-                    Self::show_section_header(ui, "NETWORK", Some(|ui: &mut egui::Ui| {
-                        // We need to handle the button click outside
-                    }));
 
-                    // Action button row
-                    ui.horizontal(|ui| {
-                        ui.add_space(theme::PADDING);
-                        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                            ui.add_space(theme::PADDING);
-                            if ui.small_button("+").on_hover_text("Add Node").clicked() {
-                                self.node_dialog.open(Point::new(0.0, 0.0));
-                            }
-                        });
-                    });
+                    // Network header with "+ New Node" button
+                    let header_height = theme::PANE_HEADER_HEIGHT;
+                    let (header_rect, _) = ui.allocate_exact_size(
+                        egui::vec2(ui.available_width(), header_height),
+                        egui::Sense::hover(),
+                    );
+
+                    // Header background
+                    ui.painter().rect_filled(header_rect, 0.0, theme::HEADER_BACKGROUND);
+
+                    // "NETWORK" title on left
+                    ui.painter().text(
+                        header_rect.left_center() + egui::vec2(theme::PADDING, 0.0),
+                        egui::Align2::LEFT_CENTER,
+                        "NETWORK",
+                        egui::FontId::proportional(10.0),
+                        theme::TEXT_SUBDUED,
+                    );
+
+                    // "+ New Node" button on the right
+                    let button_text = "+ New Node";
+                    let button_font = egui::FontId::proportional(10.0);
+                    let button_width = 70.0;
+                    let button_x = header_rect.right() - theme::PADDING - button_width;
+
+                    // Vertical separator line (1px, mid-gray)
+                    let sep_x = button_x - theme::PADDING;
+                    ui.painter().line_segment(
+                        [
+                            egui::pos2(sep_x, header_rect.top() + 4.0),
+                            egui::pos2(sep_x, header_rect.bottom() - 4.0),
+                        ],
+                        egui::Stroke::new(1.0, theme::TEXT_DISABLED),
+                    );
+
+                    // Button area
+                    let button_rect = egui::Rect::from_min_size(
+                        egui::pos2(button_x, header_rect.top()),
+                        egui::vec2(button_width, header_height),
+                    );
+                    let button_response = ui.interact(button_rect, ui.id().with("new_node_btn"), egui::Sense::click());
+
+                    // Button text (changes color on hover)
+                    let button_color = if button_response.hovered() {
+                        theme::TEXT_STRONG
+                    } else {
+                        theme::TEXT_SUBDUED
+                    };
+                    ui.painter().text(
+                        button_rect.center(),
+                        egui::Align2::CENTER_CENTER,
+                        button_text,
+                        button_font,
+                        button_color,
+                    );
+
+                    if button_response.clicked() {
+                        self.node_dialog.open(Point::new(0.0, 0.0));
+                    }
 
                     // Network view
                     let action = self.network_view.show(ui, &mut self.state.library);
