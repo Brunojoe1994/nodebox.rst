@@ -244,14 +244,14 @@ impl AnimationBar {
 
             ui.add_space(theme::PADDING);
 
-            // Frame counter
+            // Frame counter - width for 3+ digits
             ui.label(
                 egui::RichText::new("Frame")
                     .color(theme::TEXT_SUBDUED)
                     .size(theme::FONT_SIZE_SMALL),
             );
             let mut frame = self.frame as i32;
-            let frame_response = Self::styled_drag_value(ui, &mut frame, self.start_frame as i32..=self.end_frame as i32);
+            let frame_response = Self::styled_drag_value(ui, &mut frame, self.start_frame as i32..=self.end_frame as i32, 40.0);
             if frame_response.changed() {
                 self.frame = frame as u32;
                 event = AnimationEvent::FrameChanged(self.frame as f64);
@@ -265,14 +265,14 @@ impl AnimationBar {
 
             ui.add_space(theme::PADDING);
 
-            // FPS control
+            // FPS control - width for 3 digits
             ui.label(
                 egui::RichText::new("FPS")
                     .color(theme::TEXT_SUBDUED)
                     .size(theme::FONT_SIZE_SMALL),
             );
             let mut fps = self.fps as i32;
-            let fps_response = Self::styled_drag_value(ui, &mut fps, 1..=120);
+            let fps_response = Self::styled_drag_value(ui, &mut fps, 1..=120, 40.0);
             if fps_response.changed() {
                 self.fps = fps as u32;
                 event = AnimationEvent::FpsChanged(self.fps);
@@ -294,7 +294,7 @@ impl AnimationBar {
 
     /// Styled DragValue that follows the style guide.
     /// Uses SLATE_800 for subtle elevation against SLATE_900 bar background.
-    fn styled_drag_value(ui: &mut egui::Ui, value: &mut i32, range: std::ops::RangeInclusive<i32>) -> egui::Response {
+    fn styled_drag_value(ui: &mut egui::Ui, value: &mut i32, range: std::ops::RangeInclusive<i32>, width: f32) -> egui::Response {
         // Override visuals for this widget - use SLATE_800 for subtle elevation
         let old_visuals = ui.visuals().clone();
 
@@ -322,7 +322,8 @@ impl AnimationBar {
         ui.visuals_mut().widgets.noninteractive.bg_stroke = egui::Stroke::NONE;
         ui.visuals_mut().widgets.noninteractive.rounding = egui::Rounding::ZERO;
 
-        let response = ui.add(
+        let response = ui.add_sized(
+            [width, theme::ANIMATION_BAR_HEIGHT],
             egui::DragValue::new(value)
                 .range(range)
                 .speed(1.0),
