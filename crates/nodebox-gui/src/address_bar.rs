@@ -68,15 +68,6 @@ impl AddressBar {
         let rect = ui.available_rect_before_wrap();
         ui.painter().rect_filled(rect, 0.0, theme::PANEL_BG);
 
-        // Subtle bottom border only
-        ui.painter().line_segment(
-            [
-                egui::pos2(rect.min.x, rect.max.y - 1.0),
-                egui::pos2(rect.max.x, rect.max.y - 1.0),
-            ],
-            egui::Stroke::new(1.0, theme::BORDER_COLOR),
-        );
-
         ui.horizontal(|ui| {
             ui.add_space(theme::PADDING);
 
