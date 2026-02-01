@@ -260,6 +260,11 @@ impl ViewerPane {
         self.pan_zoom.reset();
     }
 
+    /// Reset zoom to 100% (actual size).
+    pub fn reset_zoom(&mut self) {
+        self.pan_zoom.reset();
+    }
+
     /// Get a mutable reference to the handles.
     #[allow(dead_code)]
     pub fn handles_mut(&mut self) -> &mut Option<HandleSet> {
@@ -275,6 +280,9 @@ impl ViewerPane {
     /// Show the viewer pane with header tabs and toolbar.
     /// Returns any handle interaction result.
     pub fn show(&mut self, ui: &mut egui::Ui, state: &AppState) -> HandleResult {
+        // Remove spacing so content is snug against header
+        ui.spacing_mut().item_spacing = egui::vec2(0.0, 0.0);
+
         // Draw header with "VIEWER" title and separator
         let (header_rect, mut x) = components::draw_pane_header_with_title(ui, "Viewer");
 
@@ -449,14 +457,14 @@ impl ViewerPane {
                         origin - Vec2::new(crosshair_size, 0.0),
                         origin + Vec2::new(crosshair_size, 0.0),
                     ],
-                    Stroke::new(1.0, egui::Color32::GRAY),
+                    Stroke::new(1.0, theme::VIEWER_CROSSHAIR),
                 );
                 painter.line_segment(
                     [
                         origin - Vec2::new(0.0, crosshair_size),
                         origin + Vec2::new(0.0, crosshair_size),
                     ],
-                    Stroke::new(1.0, egui::Color32::GRAY),
+                    Stroke::new(1.0, theme::VIEWER_CROSSHAIR),
                 );
             }
         }
@@ -629,7 +637,7 @@ impl ViewerPane {
     /// Draw a background grid.
     fn draw_grid(&self, painter: &egui::Painter, rect: Rect) {
         let grid_size = 50.0 * self.pan_zoom.zoom;
-        let grid_color = egui::Color32::from_rgba_unmultiplied(200, 200, 200, 30);
+        let grid_color = theme::viewer_grid();
 
         let center = rect.center().to_vec2();
         let origin = self.pan_zoom.pan + center;
@@ -668,9 +676,9 @@ impl ViewerPane {
 
                 // Draw point marker
                 let color = match pp.point_type {
-                    PointType::LineTo => Color32::from_rgb(100, 200, 100),
-                    PointType::CurveTo => Color32::from_rgb(200, 100, 100),
-                    PointType::CurveData => Color32::from_rgb(100, 100, 200),
+                    PointType::LineTo => theme::POINT_LINE_TO,
+                    PointType::CurveTo => theme::POINT_CURVE_TO,
+                    PointType::CurveData => theme::POINT_CURVE_DATA,
                 };
                 painter.circle_filled(screen_pt, 3.0, color);
             }

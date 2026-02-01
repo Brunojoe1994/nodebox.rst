@@ -8,7 +8,7 @@ repository.workspace = true
 authors.workspace = true
 
 [[bin]]
-name = "nodebox"
+name = "nodebox-cli"
 path = "src/main.rs"
 
 [dependencies]

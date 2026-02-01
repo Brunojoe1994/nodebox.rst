@@ -41,3 +41,40 @@ pub use state::{populate_default_ports, AppState};
 pub use nodebox_core::geometry::{Color, Path, Point};
 pub use nodebox_core::node::{Connection, Node, NodeLibrary, Port};
 pub use nodebox_core::Value;
+
+mod native_menu;
+
+use native_menu::NativeMenuHandle;
+use std::path::PathBuf;
+
+/// Run the NodeBox GUI application.
+pub fn run() -> eframe::Result<()> {
+    // Initialize logging
+    env_logger::init();
+
+    // Initialize native menu bar (macOS)
+    // Must be done before eframe starts, and menu handle is passed to the app
+    let native_menu = NativeMenuHandle::new();
+
+    // Get initial file from command line arguments
+    let initial_file: Option<PathBuf> = std::env::args()
+        .nth(1)
+        .map(PathBuf::from)
+        .filter(|p| p.extension().map_or(false, |ext| ext == "ndbx"));
+
+    // Native options
+    let options = eframe::NativeOptions {
+        viewport: egui::ViewportBuilder::default()
+            .with_inner_size([1280.0, 800.0])
+            .with_min_inner_size([800.0, 600.0])
+            .with_title("NodeBox"),
+        ..Default::default()
+    };
+
+    // Run the application
+    eframe::run_native(
+        "NodeBox",
+        options,
+        Box::new(move |cc| Ok(Box::new(NodeBoxApp::new_with_file(cc, initial_file, Some(native_menu))))),
+    )
+}
