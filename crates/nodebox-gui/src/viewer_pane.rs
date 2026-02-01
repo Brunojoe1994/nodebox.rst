@@ -282,7 +282,7 @@ impl ViewerPane {
         );
 
         // Draw tab bar background
-        ui.painter().rect_filled(tab_bar_rect, 0.0, theme::TAB_BAR_BG);
+        ui.painter().rect_filled(tab_bar_rect, 0.0, theme::PANE_HEADER_BACKGROUND_COLOR);
 
         ui.allocate_ui_at_rect(tab_bar_rect, |ui| {
             ui.horizontal_centered(|ui| {

@@ -412,8 +412,6 @@ impl eframe::App for NodeBoxApp {
 
                 ui.allocate_new_ui(egui::UiBuilder::new().max_rect(params_rect), |ui| {
                     ui.set_clip_rect(params_rect);
-                    // Consistent section header
-                    Self::show_section_header(ui, "PARAMETERS", None::<fn(&mut egui::Ui)>);
                     self.parameters.show(ui, &mut self.state);
                 });
 
@@ -444,7 +442,7 @@ impl eframe::App for NodeBoxApp {
                     );
 
                     // Header background
-                    ui.painter().rect_filled(header_rect, 0.0, theme::HEADER_BACKGROUND);
+                    ui.painter().rect_filled(header_rect, 0.0, theme::PANE_HEADER_BACKGROUND_COLOR);
 
                     // "NETWORK" title on left
                     ui.painter().text(
@@ -452,7 +450,7 @@ impl eframe::App for NodeBoxApp {
                         egui::Align2::LEFT_CENTER,
                         "NETWORK",
                         egui::FontId::proportional(10.0),
-                        theme::TEXT_SUBDUED,
+                        theme::PANE_HEADER_FOREGROUND_COLOR,
                     );
 
                     // "+ New Node" button on the right
@@ -482,7 +480,7 @@ impl eframe::App for NodeBoxApp {
                     let button_color = if button_response.hovered() {
                         theme::TEXT_STRONG
                     } else {
-                        theme::TEXT_SUBDUED
+                        theme::PANE_HEADER_FOREGROUND_COLOR
                     };
                     ui.painter().text(
                         button_rect.center(),
@@ -600,34 +598,6 @@ impl eframe::App for NodeBoxApp {
 }
 
 impl NodeBoxApp {
-    /// Show a consistent section header (Figma-style).
-    /// Uses allocate_space to properly advance the cursor without extra gaps.
-    fn show_section_header<F: FnOnce(&mut egui::Ui)>(ui: &mut egui::Ui, title: &str, _action: Option<F>) {
-        let header_height = theme::PANE_HEADER_HEIGHT;
-
-        // Allocate the exact space for the header (this advances the cursor)
-        let (header_rect, _response) = ui.allocate_exact_size(
-            egui::vec2(ui.available_width(), header_height),
-            egui::Sense::hover(),
-        );
-
-        // Draw header background
-        ui.painter().rect_filled(
-            header_rect,
-            0.0,
-            theme::HEADER_BACKGROUND,
-        );
-
-        // Draw the title text
-        ui.painter().text(
-            header_rect.left_center() + egui::vec2(theme::PADDING, 0.0),
-            egui::Align2::LEFT_CENTER,
-            title,
-            egui::FontId::proportional(10.0),
-            theme::TEXT_SUBDUED,
-        );
-    }
-
     /// Handle FourPointHandle change (rect x, y, width, height).
     fn handle_four_point_change(&mut self, x: f64, y: f64, width: f64, height: f64) {
         if let Some(ref node_name) = self.state.selected_node {

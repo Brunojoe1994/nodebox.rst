@@ -1,6 +1,6 @@
 //! UI panels for the NodeBox application.
 
-use eframe::egui::{self, Color32, Sense, TextStyle};
+use eframe::egui::{self, Sense, TextStyle};
 use nodebox_core::node::{PortType, Widget};
 use nodebox_core::Value;
 use crate::state::AppState;
@@ -54,44 +54,15 @@ impl ParameterPanel {
                 }
             };
 
+            // Show header before mutable borrow
+            self.show_parameters_header(
+                ui,
+                node_display_name.as_deref(),
+                node_prototype.as_deref(),
+            );
+
             // Find the node in the library for mutation
             if let Some(node) = state.library.root.child_mut(&node_name) {
-                // Selection header - shows selected node name and type
-                let header_height = theme::PARAMETER_ROW_HEIGHT;
-                let (header_rect, _) = ui.allocate_exact_size(
-                    egui::vec2(ui.available_width(), header_height),
-                    egui::Sense::hover(),
-                );
-
-                ui.painter().rect_filled(
-                    header_rect,
-                    0.0,
-                    theme::HEADER_BACKGROUND,
-                );
-
-                // Node name on left
-                ui.painter().text(
-                    header_rect.left_center() + egui::vec2(theme::PADDING, 0.0),
-                    egui::Align2::LEFT_CENTER,
-                    node_display_name.as_deref().unwrap_or(&node.name),
-                    egui::FontId::proportional(11.0),
-                    theme::TEXT_BRIGHT,
-                );
-
-                // Prototype on right
-                if let Some(ref proto) = node_prototype {
-                    ui.painter().text(
-                        header_rect.right_center() - egui::vec2(theme::PADDING, 0.0),
-                        egui::Align2::RIGHT_CENTER,
-                        proto,
-                        egui::FontId::proportional(11.0),
-                        theme::TEXT_DISABLED,
-                    );
-                }
-
-                // Small spacing before parameters
-                ui.add_space(theme::PADDING_SMALL);
-
                 // Clone node_name for use in closure
                 let node_name_clone = node_name.clone();
 
@@ -531,6 +502,8 @@ impl ParameterPanel {
     /// Show document properties when no node is selected.
     fn show_no_selection(&mut self, ui: &mut egui::Ui, error: Option<&str>) {
         if let Some(err) = error {
+            // Show header even for errors
+            self.show_parameters_header(ui, None, None);
             ui.vertical_centered(|ui| {
                 ui.add_space(30.0);
                 ui.label(
@@ -540,23 +513,8 @@ impl ParameterPanel {
                 );
             });
         } else {
-            // Show document header
-            let header_height = theme::PARAMETER_ROW_HEIGHT;
-            let (header_rect, _) = ui.allocate_exact_size(
-                egui::vec2(ui.available_width(), header_height),
-                egui::Sense::hover(),
-            );
-
-            ui.painter().rect_filled(header_rect, 0.0, theme::HEADER_BACKGROUND);
-            ui.painter().text(
-                header_rect.left_center() + egui::vec2(theme::PADDING, 0.0),
-                egui::Align2::LEFT_CENTER,
-                "Document",
-                egui::FontId::proportional(11.0),
-                theme::TEXT_BRIGHT,
-            );
-
-            ui.add_space(theme::PADDING_SMALL);
+            // Show merged header with "Document"
+            self.show_parameters_header(ui, Some("Document"), None);
 
             // Hint text
             ui.vertical_centered(|ui| {
@@ -570,28 +528,70 @@ impl ParameterPanel {
         }
     }
 
-    /// Show document properties panel (canvas size, etc.).
-    pub fn show_document_properties(&mut self, ui: &mut egui::Ui, state: &mut AppState) {
-        // Apply minimal styling for the panel
-        ui.style_mut().spacing.item_spacing = egui::vec2(8.0, 2.0);
-
-        // Document properties header
-        let header_height = theme::PARAMETER_ROW_HEIGHT;
+    /// Show the merged parameters header: PARAMETERS | node_name ... prototype
+    fn show_parameters_header(&self, ui: &mut egui::Ui, node_name: Option<&str>, prototype: Option<&str>) {
+        let header_height = theme::PANE_HEADER_HEIGHT;
         let (header_rect, _) = ui.allocate_exact_size(
             egui::vec2(ui.available_width(), header_height),
             egui::Sense::hover(),
         );
 
-        ui.painter().rect_filled(header_rect, 0.0, theme::HEADER_BACKGROUND);
+        ui.painter().rect_filled(
+            header_rect,
+            0.0,
+            theme::PANE_HEADER_BACKGROUND_COLOR,
+        );
+
+        // "PARAMETERS" title on left
         ui.painter().text(
             header_rect.left_center() + egui::vec2(theme::PADDING, 0.0),
             egui::Align2::LEFT_CENTER,
-            "Document",
-            egui::FontId::proportional(11.0),
-            theme::TEXT_BRIGHT,
+            "PARAMETERS",
+            egui::FontId::proportional(10.0),
+            theme::PANE_HEADER_FOREGROUND_COLOR,
         );
 
-        ui.add_space(theme::PADDING_SMALL);
+        // Only show separator and node info if we have a node name
+        if let Some(name) = node_name {
+            // Vertical separator after PARAMETERS
+            let sep_x = header_rect.left() + 90.0;
+            ui.painter().line_segment(
+                [
+                    egui::pos2(sep_x, header_rect.top() + 4.0),
+                    egui::pos2(sep_x, header_rect.bottom() - 4.0),
+                ],
+                egui::Stroke::new(1.0, theme::TEXT_DISABLED),
+            );
+
+            // Node name after separator
+            ui.painter().text(
+                egui::pos2(sep_x + theme::PADDING, header_rect.center().y),
+                egui::Align2::LEFT_CENTER,
+                name,
+                egui::FontId::proportional(10.0),
+                theme::TEXT_BRIGHT,
+            );
+
+            // Prototype on right
+            if let Some(proto) = prototype {
+                ui.painter().text(
+                    header_rect.right_center() - egui::vec2(theme::PADDING, 0.0),
+                    egui::Align2::RIGHT_CENTER,
+                    proto,
+                    egui::FontId::proportional(10.0),
+                    theme::TEXT_DISABLED,
+                );
+            }
+        }
+    }
+
+    /// Show document properties panel (canvas size, etc.).
+    pub fn show_document_properties(&mut self, ui: &mut egui::Ui, state: &mut AppState) {
+        // Apply minimal styling for the panel
+        ui.style_mut().spacing.item_spacing = egui::vec2(8.0, 2.0);
+
+        // Merged header with "Document"
+        self.show_parameters_header(ui, Some("Document"), None);
 
         // Width
         ui.horizontal(|ui| {

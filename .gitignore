@@ -20,3 +20,6 @@ Thumbs.db
 # Jython package cache and compiled files
 lib/cachedir
 *$py.class
+
+# Claude Code
+.claude/worktrees

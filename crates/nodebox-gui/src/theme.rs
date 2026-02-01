@@ -114,6 +114,15 @@ pub const ADDRESS_BAR_HEIGHT: f32 = TOP_BAR_HEIGHT;
 pub const ANIMATION_BAR_HEIGHT: f32 = 27.0;
 pub const PANE_HEADER_HEIGHT: f32 = TITLE_BAR_HEIGHT;
 pub const LABEL_WIDTH: f32 = 100.0;
+
+// =============================================================================
+// PANE HEADER COLORS
+// =============================================================================
+
+/// Pane header background color (consistent across all panes)
+pub const PANE_HEADER_BACKGROUND_COLOR: Color32 = GRAY_250;
+/// Pane header foreground/text color (higher contrast for readability)
+pub const PANE_HEADER_FOREGROUND_COLOR: Color32 = GRAY_700;
 pub const PARAMETER_PANEL_WIDTH: f32 = 280.0;
 pub const PARAMETER_ROW_HEIGHT: f32 = ROW_HEIGHT;
 
