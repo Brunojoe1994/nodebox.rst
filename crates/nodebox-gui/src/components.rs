@@ -39,6 +39,15 @@ pub fn draw_pane_header_with_title(
         theme::PANE_HEADER_BACKGROUND_COLOR,
     );
 
+    // Top border (1px light line)
+    ui.painter().line_segment(
+        [
+            egui::pos2(aligned_rect.left(), aligned_rect.top() + 0.5),
+            egui::pos2(aligned_rect.right(), aligned_rect.top() + 0.5),
+        ],
+        egui::Stroke::new(1.0, theme::SLATE_700),
+    );
+
     // Title on left (UPPERCASE)
     let title_font = egui::FontId::proportional(10.0);
     let title_galley = ui.painter().layout_no_wrap(
