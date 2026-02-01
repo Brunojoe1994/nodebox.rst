@@ -489,8 +489,8 @@ impl eframe::App for NodeBoxApp {
                         theme::PANE_HEADER_FOREGROUND_COLOR
                     };
                     ui.painter().text(
-                        button_rect.center(),
-                        egui::Align2::CENTER_CENTER,
+                        button_rect.left_center(),
+                        egui::Align2::LEFT_CENTER,
                         button_text,
                         button_font,
                         button_color,
