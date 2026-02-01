@@ -73,14 +73,14 @@ Always use semantic color tokens from `theme.rs` instead of hardcoded hex values
 - `BLUE_400` / `BLUE_500` - Primary accent (selection, links)
 - `SUCCESS_GREEN`, `WARNING_ORANGE`, `ERROR_RED` - Status colors
 
-### Spacing (8px Grid)
-All spacing should be multiples of 8px:
-- `PADDING` = 8px (standard)
+### Spacing (4px Grid)
+All spacing should be multiples of 4px:
 - `PADDING_SMALL` = 4px
+- `PADDING` = 8px (standard)
 - `PADDING_LARGE` = 12px
 - `VIEW_PADDING` = 12px (panel margins)
 - `ITEM_SPACING` = 8px
-- `INDENT` = 14px (hierarchy indent)
+- `INDENT` = 12px (hierarchy indent)
 
 ### Typography
 - `FONT_SIZE_BASE` = 12px (body text)
