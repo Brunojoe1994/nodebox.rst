@@ -745,7 +745,7 @@ impl NetworkView {
         &mut self,
         ctx: &egui::Context,
         painter: &egui::Painter,
-        network: &Node,
+        _network: &Node,
         node: &Node,
         offset: Vec2,
         is_selected: bool,
@@ -810,40 +810,22 @@ impl NetworkView {
                 .as_ref()
                 .is_some_and(|(n, p)| n == &node.name && p == &port.name);
 
-            // Determine if this port is already connected
-            let is_connected = network
-                .connections
-                .iter()
-                .any(|c| c.input_node == node.name && c.input_port == port.name);
-
             // Calculate port size and color based on drag state
+            // Heights change during connection mode, colors stay the same
+            // Ports "hug" the node - bottom edge stays at node top
             let (port_height, color) = if let Some(output_type) = drag_output_type {
-                // We're dragging a connection - show type compatibility feedback
+                // We're dragging a connection - show type compatibility via height
                 let is_compatible = PortType::is_compatible(output_type, &port.port_type);
-                let is_exact_match = output_type == &port.port_type;
 
                 if is_hovered && is_compatible {
-                    // Hovered and compatible: bright accent, normal size
+                    // Hovered and compatible: accent color, normal size
                     (PORT_HEIGHT, theme::PORT_HOVER)
                 } else if is_compatible {
-                    // Compatible but not hovered: show inflated hit area indicator
-                    // Unconnected ports get larger highlight to show the inflated hit zone
-                    let height = if is_connected {
-                        PORT_HEIGHT + 2.0
-                    } else {
-                        PORT_HEIGHT + 4.0
-                    };
-                    let color = if is_exact_match {
-                        // Exact type match: brighter highlight
-                        theme::VIOLET_400
-                    } else {
-                        // Convertible: dimmer highlight
-                        theme::SLATE_400
-                    };
-                    (height, color)
+                    // Compatible: taller port (2px extra)
+                    (PORT_HEIGHT + 2.0, self.port_type_color(&port.port_type))
                 } else {
-                    // Incompatible: minimal visual, dimmed
-                    (PORT_HEIGHT - 1.0, theme::SLATE_700)
+                    // Incompatible: minimal height (1px)
+                    (1.0, self.port_type_color(&port.port_type))
                 }
             } else if is_hovered {
                 // Not dragging, but hovered: accent highlight
@@ -853,8 +835,12 @@ impl NetworkView {
                 (PORT_HEIGHT, self.port_type_color(&port.port_type))
             };
 
+            // Adjust Y position so port bottom stays at node top (hugs the node)
+            let port_y = rect.top() - port_height * z;
+            let adjusted_port_pos = Pos2::new(port_pos.x, port_y);
+
             let port_rect = Rect::from_min_size(
-                port_pos,
+                adjusted_port_pos,
                 Vec2::new(PORT_WIDTH * z, port_height * z),
             );
             painter.rect_filled(port_rect, 0.0, color);
