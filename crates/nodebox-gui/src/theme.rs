@@ -265,8 +265,8 @@ pub const ANIMATION_BAR_BACKGROUND: Color32 = SLATE_900;
 
 // Network view colors
 pub const NETWORK_BACKGROUND: Color32 = SLATE_900;
-/// Grid lines - use slate-700 for visible contrast against slate-900 background
-pub const NETWORK_GRID: Color32 = SLATE_700;
+/// Grid lines - subtle contrast against slate-900 background
+pub const NETWORK_GRID: Color32 = SLATE_800;
 
 // Network View - Tooltips
 pub const TOOLTIP_BG: Color32 = SURFACE_ELEVATED;
@@ -276,8 +276,18 @@ pub const TOOLTIP_TEXT: Color32 = TEXT_STRONG;
 pub const CONNECTION_HOVER: Color32 = ERROR_RED; // Red indicates deletable
 pub const PORT_HOVER: Color32 = VIOLET_400; // Accent for interactive
 
-// Node body fill color - slate-600 for good visibility
-pub const NODE_BODY_COLOR: Color32 = SLATE_600;
+// Node body fill colors - muted tints based on output type
+// Base: SLATE_600 (69, 85, 108) - all variants stay dark and professional
+pub const NODE_BODY_GEOMETRY: Color32 = SLATE_600;                          // Standard slate
+pub const NODE_BODY_INT: Color32 = Color32::from_rgb(65, 78, 108);          // Subtle blue tint
+pub const NODE_BODY_FLOAT: Color32 = Color32::from_rgb(65, 78, 108);        // Subtle blue tint
+pub const NODE_BODY_STRING: Color32 = Color32::from_rgb(62, 88, 82);        // Subtle green tint
+pub const NODE_BODY_BOOLEAN: Color32 = Color32::from_rgb(90, 82, 65);       // Subtle amber tint
+pub const NODE_BODY_POINT: Color32 = Color32::from_rgb(58, 85, 95);         // Subtle cyan tint
+pub const NODE_BODY_COLOR: Color32 = Color32::from_rgb(85, 70, 90);         // Subtle pink tint
+pub const NODE_BODY_LIST: Color32 = Color32::from_rgb(58, 88, 88);          // Subtle teal tint
+pub const NODE_BODY_DATA: Color32 = Color32::from_rgb(92, 78, 62);          // Subtle orange tint
+pub const NODE_BODY_DEFAULT: Color32 = SLATE_600;                           // Fallback
 
 // Node Category Colors (for node icons/identity)
 pub const CATEGORY_GEOMETRY: Color32 = Color32::from_rgb(80, 120, 200);
