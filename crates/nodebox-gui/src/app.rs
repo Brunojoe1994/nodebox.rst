@@ -445,22 +445,22 @@ impl eframe::App for NodeBoxApp {
                     ui.painter().rect_filled(header_rect, 0.0, theme::PANE_HEADER_BACKGROUND_COLOR);
 
                     // "NETWORK" title on left
-                    ui.painter().text(
-                        header_rect.left_center() + egui::vec2(theme::PADDING, 0.0),
-                        egui::Align2::LEFT_CENTER,
-                        "NETWORK",
-                        egui::FontId::proportional(10.0),
+                    let title_font = egui::FontId::proportional(10.0);
+                    let title_text = "NETWORK";
+                    let title_galley = ui.painter().layout_no_wrap(
+                        title_text.to_string(),
+                        title_font.clone(),
+                        theme::PANE_HEADER_FOREGROUND_COLOR,
+                    );
+                    let title_x = header_rect.left() + theme::PADDING;
+                    ui.painter().galley(
+                        egui::pos2(title_x, header_rect.center().y - title_galley.size().y / 2.0),
+                        title_galley.clone(),
                         theme::PANE_HEADER_FOREGROUND_COLOR,
                     );
 
-                    // "+ New Node" button on the right
-                    let button_text = "+ New Node";
-                    let button_font = egui::FontId::proportional(10.0);
-                    let button_width = 70.0;
-                    let button_x = header_rect.right() - theme::PADDING - button_width;
-
-                    // Vertical separator line (1px, mid-gray)
-                    let sep_x = button_x - theme::PADDING;
+                    // Vertical separator line (1px, mid-gray) - 8px after NETWORK
+                    let sep_x = title_x + title_galley.size().x + 8.0;
                     ui.painter().line_segment(
                         [
                             egui::pos2(sep_x, header_rect.top() + 4.0),
@@ -468,6 +468,12 @@ impl eframe::App for NodeBoxApp {
                         ],
                         egui::Stroke::new(1.0, theme::TEXT_DISABLED),
                     );
+
+                    // "+ New Node" button after the separator
+                    let button_text = "+ New Node";
+                    let button_font = egui::FontId::proportional(10.0);
+                    let button_width = 70.0;
+                    let button_x = sep_x + 8.0;
 
                     // Button area
                     let button_rect = egui::Rect::from_min_size(
@@ -483,8 +489,8 @@ impl eframe::App for NodeBoxApp {
                         theme::PANE_HEADER_FOREGROUND_COLOR
                     };
                     ui.painter().text(
-                        button_rect.center(),
-                        egui::Align2::CENTER_CENTER,
+                        button_rect.left_center(),
+                        egui::Align2::LEFT_CENTER,
                         button_text,
                         button_font,
                         button_color,
