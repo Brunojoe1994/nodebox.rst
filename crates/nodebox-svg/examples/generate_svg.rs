@@ -1,7 +1,7 @@
 //! Generate an SVG file showcasing NodeBox capabilities.
 
-use nodebox_core::geometry::{Path, Color, Point, Canvas, font};
-use nodebox_svg::{render_to_svg, render_canvas_to_svg};
+use nodebox_core::geometry::{Path, Color, Point, font};
+use nodebox_svg::render_to_svg;
 use std::f64::consts::PI;
 
 fn main() {
@@ -164,7 +164,6 @@ fn generate_bezier_demo(out_dir: &std::path::Path) {
     }
 
     // Show point_at at various positions
-    let mut label_y = 320.0;
     for t in [0.0, 0.25, 0.5, 0.75] {
         let p = ellipse.point_at(t);
         let mut marker = Path::ellipse(p.x, p.y, 20.0, 20.0);

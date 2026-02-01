@@ -1,5 +1,7 @@
 //! Address bar with breadcrumb navigation.
 
+#![allow(dead_code)]
+
 use eframe::egui::{self, Sense};
 use crate::theme;
 

@@ -42,20 +42,34 @@ impl NodeLibrary {
         }
     }
 
-    /// Returns the canvas width from properties.
-    pub fn canvas_width(&self) -> f64 {
+    /// Returns the document width from properties.
+    /// Note: internally stored as "canvasWidth" for backwards compatibility.
+    pub fn width(&self) -> f64 {
         self.properties
             .get("canvasWidth")
             .and_then(|s| s.parse().ok())
             .unwrap_or(1000.0)
     }
 
-    /// Returns the canvas height from properties.
-    pub fn canvas_height(&self) -> f64 {
+    /// Returns the document height from properties.
+    /// Note: internally stored as "canvasHeight" for backwards compatibility.
+    pub fn height(&self) -> f64 {
         self.properties
             .get("canvasHeight")
             .and_then(|s| s.parse().ok())
             .unwrap_or(1000.0)
+    }
+
+    /// Sets the document width.
+    /// Note: internally stored as "canvasWidth" for backwards compatibility.
+    pub fn set_width(&mut self, width: f64) {
+        self.set_property("canvasWidth", (width as i64).to_string());
+    }
+
+    /// Sets the document height.
+    /// Note: internally stored as "canvasHeight" for backwards compatibility.
+    pub fn set_height(&mut self, height: f64) {
+        self.set_property("canvasHeight", (height as i64).to_string());
     }
 
     /// Sets a property.
@@ -123,13 +137,16 @@ mod tests {
     }
 
     #[test]
-    fn test_library_canvas_size() {
+    fn test_library_size() {
         let mut lib = NodeLibrary::new("test");
-        lib.set_property("canvasWidth", "800");
-        lib.set_property("canvasHeight", "600");
+        lib.set_width(800.0);
+        lib.set_height(600.0);
 
-        assert_eq!(lib.canvas_width(), 800.0);
-        assert_eq!(lib.canvas_height(), 600.0);
+        assert_eq!(lib.width(), 800.0);
+        assert_eq!(lib.height(), 600.0);
+        // Verify backwards compatibility - stored as canvasWidth/canvasHeight
+        assert_eq!(lib.property("canvasWidth"), Some("800"));
+        assert_eq!(lib.property("canvasHeight"), Some("600"));
     }
 
     #[test]
@@ -150,9 +167,9 @@ mod tests {
     }
 
     #[test]
-    fn test_library_default_canvas_size() {
+    fn test_library_default_size() {
         let lib = NodeLibrary::new("test");
-        assert_eq!(lib.canvas_width(), 1000.0);
-        assert_eq!(lib.canvas_height(), 1000.0);
+        assert_eq!(lib.width(), 1000.0);
+        assert_eq!(lib.height(), 1000.0);
     }
 }

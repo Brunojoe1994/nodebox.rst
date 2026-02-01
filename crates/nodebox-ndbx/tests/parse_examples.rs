@@ -18,8 +18,8 @@ fn test_parse_primitives_example() {
 
     assert_eq!(library.format_version, 17);
     assert!(library.uuid.is_some());
-    assert_eq!(library.canvas_width(), 1000.0);
-    assert_eq!(library.canvas_height(), 1000.0);
+    assert_eq!(library.width(), 1000.0);
+    assert_eq!(library.height(), 1000.0);
 
     // Root should be a network with "combine1" as rendered child
     assert_eq!(library.root.name, "root");

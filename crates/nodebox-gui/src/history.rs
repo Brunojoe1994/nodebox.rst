@@ -12,6 +12,7 @@ pub struct History {
     /// Future states (redo stack).
     redo_stack: Vec<NodeLibrary>,
     /// The last saved state (to track changes).
+    #[allow(dead_code)]
     last_saved_state: Option<NodeLibrary>,
 }
 
@@ -79,11 +80,13 @@ impl History {
     }
 
     /// Mark the current state as saved.
+    #[allow(dead_code)]
     pub fn mark_saved(&mut self, library: &NodeLibrary) {
         self.last_saved_state = Some(library.clone());
     }
 
     /// Check if the library has unsaved changes since the last save.
+    #[allow(dead_code)]
     pub fn has_unsaved_changes(&self, library: &NodeLibrary) -> bool {
         match &self.last_saved_state {
             Some(saved) => saved != library,
@@ -92,6 +95,7 @@ impl History {
     }
 
     /// Clear all history.
+    #[allow(dead_code)]
     pub fn clear(&mut self) {
         self.undo_stack.clear();
         self.redo_stack.clear();

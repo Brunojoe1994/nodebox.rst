@@ -5,6 +5,10 @@
 //! - Semantic colors (panel backgrounds, text, etc.)
 //! - Spacing and layout constants
 //! - Typography settings
+//!
+//! Note: Not all tokens are used yet - they are defined for the complete design system.
+
+#![allow(dead_code)]
 
 use eframe::egui::{self, Color32, FontId, Rounding, Stroke, Style, Visuals};
 

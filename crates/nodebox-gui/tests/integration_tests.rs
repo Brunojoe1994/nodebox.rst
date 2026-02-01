@@ -201,12 +201,12 @@ fn create_view_options_harness() -> Harness<'static> {
         let mut show_handles = true;
         let mut show_points = false;
         let mut show_origin = true;
-        let mut show_bounds = false;
+        let mut show_canvas = true;
 
         ui.checkbox(&mut show_handles, "Show Handles");
         ui.checkbox(&mut show_points, "Show Points");
         ui.checkbox(&mut show_origin, "Show Origin");
-        ui.checkbox(&mut show_bounds, "Show Bounds");
+        ui.checkbox(&mut show_canvas, "Show Canvas");
     })
 }
 
@@ -217,7 +217,7 @@ fn test_view_options_checkboxes_exist() {
     harness.get_by_label("Show Handles");
     harness.get_by_label("Show Points");
     harness.get_by_label("Show Origin");
-    harness.get_by_label("Show Bounds");
+    harness.get_by_label("Show Canvas");
 }
 
 #[test]

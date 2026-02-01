@@ -38,6 +38,7 @@ pub struct NodeBoxApp {
 
 impl NodeBoxApp {
     /// Create a new NodeBox application instance.
+    #[allow(dead_code)]
     pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
         Self::new_with_file(_cc, None)
     }
@@ -79,6 +80,7 @@ impl NodeBoxApp {
     /// This constructor creates an app without spawning a render worker thread,
     /// making it suitable for unit tests and integration tests.
     #[cfg(test)]
+    #[allow(dead_code)]
     pub fn new_for_testing() -> Self {
         let state = AppState::new();
         let hash = Self::hash_library(&state.library);
@@ -103,6 +105,7 @@ impl NodeBoxApp {
     ///
     /// This is useful for tests that need to set up their own node configuration.
     #[cfg(test)]
+    #[allow(dead_code)]
     pub fn new_for_testing_empty() -> Self {
         let mut state = AppState::new();
         state.library = nodebox_core::node::NodeLibrary::new("test");
@@ -126,21 +129,25 @@ impl NodeBoxApp {
     }
 
     /// Get a reference to the application state.
+    #[allow(dead_code)]
     pub fn state(&self) -> &AppState {
         &self.state
     }
 
     /// Get a mutable reference to the application state.
+    #[allow(dead_code)]
     pub fn state_mut(&mut self) -> &mut AppState {
         &mut self.state
     }
 
     /// Get a reference to the history manager.
+    #[allow(dead_code)]
     pub fn history(&self) -> &History {
         &self.history
     }
 
     /// Get a mutable reference to the history manager.
+    #[allow(dead_code)]
     pub fn history_mut(&mut self) -> &mut History {
         &mut self.history
     }
@@ -149,6 +156,7 @@ impl NodeBoxApp {
     ///
     /// Unlike the normal async flow, this directly evaluates and updates geometry.
     #[cfg(test)]
+    #[allow(dead_code)]
     pub fn evaluate_for_testing(&mut self) {
         self.state.evaluate();
     }
@@ -158,6 +166,7 @@ impl NodeBoxApp {
     /// This checks for changes and updates history, similar to what happens
     /// during a normal frame update, but without the async render worker.
     #[cfg(test)]
+    #[allow(dead_code)]
     pub fn update_for_testing(&mut self) {
         // Check for changes and save to history
         let current_hash = Self::hash_library(&self.state.library);
@@ -322,7 +331,7 @@ impl NodeBoxApp {
                 ui.checkbox(&mut self.viewer_pane.show_handles, "Show Handles");
                 ui.checkbox(&mut self.viewer_pane.show_points, "Show Points");
                 ui.checkbox(&mut self.viewer_pane.show_origin, "Show Origin");
-                ui.checkbox(&mut self.viewer_pane.show_bounds, "Show Bounds");
+                ui.checkbox(&mut self.viewer_pane.show_canvas_border, "Show Canvas");
             });
 
             ui.menu_button("Help", |ui| {
@@ -651,7 +660,10 @@ impl NodeBoxApp {
             .add_filter("SVG Files", &["svg"])
             .save_file()
         {
-            if let Err(e) = self.state.export_svg(&path) {
+            // Use document dimensions for export
+            let width = self.state.library.width();
+            let height = self.state.library.height();
+            if let Err(e) = self.state.export_svg(&path, width, height) {
                 log::error!("Failed to export SVG: {}", e);
             }
         }
@@ -662,11 +674,9 @@ impl NodeBoxApp {
             .add_filter("PNG Files", &["png"])
             .save_file()
         {
-            // Calculate bounds and export dimensions
-            let (min_x, min_y, max_x, max_y) = crate::export::calculate_bounds(&self.state.geometry);
-            let padding = 20.0;
-            let width = ((max_x - min_x + padding * 2.0).max(100.0)) as u32;
-            let height = ((max_y - min_y + padding * 2.0).max(100.0)) as u32;
+            // Use document dimensions for export
+            let width = self.state.library.width() as u32;
+            let height = self.state.library.height() as u32;
 
             if let Err(e) = crate::export::export_png(
                 &self.state.geometry,

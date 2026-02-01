@@ -34,8 +34,8 @@ fn test_load_primitives() {
     // Verify basic structure
     assert_eq!(library.root.name, "root");
     assert_eq!(library.root.rendered_child, Some("combine1".to_string()));
-    assert_eq!(library.canvas_width(), 1000.0);
-    assert_eq!(library.canvas_height(), 1000.0);
+    assert_eq!(library.width(), 1000.0);
+    assert_eq!(library.height(), 1000.0);
 
     // Verify nodes were loaded
     assert!(!library.root.children.is_empty());

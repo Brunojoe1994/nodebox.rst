@@ -528,8 +528,8 @@ mod tests {
 
         assert_eq!(library.format_version, 17);
         assert_eq!(library.uuid, Some("test-uuid".to_string()));
-        assert_eq!(library.canvas_width(), 800.0);
-        assert_eq!(library.canvas_height(), 600.0);
+        assert_eq!(library.width(), 800.0);
+        assert_eq!(library.height(), 600.0);
         assert_eq!(library.root.name, "root");
         assert_eq!(library.root.rendered_child, Some("rect1".to_string()));
         assert_eq!(library.root.children.len(), 1);
