@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git:*)",
+      "Bash(cargo:*)",
+      "WebSearch",
+      "WebFetch(domain:docs.rs)",
+      "Bash(gh:*)"
+    ]
+  }
+}
