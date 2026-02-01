@@ -251,11 +251,7 @@ impl AnimationBar {
                     .size(theme::FONT_SIZE_SMALL),
             );
             let mut frame = self.frame as i32;
-            let frame_response = ui.add(
-                egui::DragValue::new(&mut frame)
-                    .range(self.start_frame as i32..=self.end_frame as i32)
-                    .speed(1.0),
-            );
+            let frame_response = Self::styled_drag_value(ui, &mut frame, self.start_frame as i32..=self.end_frame as i32);
             if frame_response.changed() {
                 self.frame = frame as u32;
                 event = AnimationEvent::FrameChanged(self.frame as f64);
@@ -276,11 +272,7 @@ impl AnimationBar {
                     .size(theme::FONT_SIZE_SMALL),
             );
             let mut fps = self.fps as i32;
-            let fps_response = ui.add(
-                egui::DragValue::new(&mut fps)
-                    .range(1..=120)
-                    .speed(1.0),
-            );
+            let fps_response = Self::styled_drag_value(ui, &mut fps, 1..=120);
             if fps_response.changed() {
                 self.fps = fps as u32;
                 event = AnimationEvent::FpsChanged(self.fps);
@@ -289,7 +281,7 @@ impl AnimationBar {
             ui.add_space(theme::PADDING);
 
             // Loop toggle
-            ui.checkbox(&mut self.loop_enabled, "");
+            Self::styled_checkbox(ui, &mut self.loop_enabled);
             ui.label(
                 egui::RichText::new("Loop")
                     .color(if self.loop_enabled { theme::TEXT_DEFAULT } else { theme::TEXT_SUBDUED })
@@ -298,6 +290,60 @@ impl AnimationBar {
         });
 
         event
+    }
+
+    /// Styled DragValue that follows the style guide.
+    fn styled_drag_value(ui: &mut egui::Ui, value: &mut i32, range: std::ops::RangeInclusive<i32>) -> egui::Response {
+        // Override visuals for this widget
+        let old_visuals = ui.visuals().clone();
+
+        ui.visuals_mut().widgets.inactive.bg_fill = theme::TEXT_EDIT_BG;
+        ui.visuals_mut().widgets.inactive.bg_stroke = egui::Stroke::NONE;
+        ui.visuals_mut().widgets.inactive.rounding = egui::Rounding::ZERO;
+
+        ui.visuals_mut().widgets.hovered.bg_fill = theme::HOVER_BG;
+        ui.visuals_mut().widgets.hovered.bg_stroke = egui::Stroke::NONE;
+        ui.visuals_mut().widgets.hovered.rounding = egui::Rounding::ZERO;
+
+        ui.visuals_mut().widgets.active.bg_fill = theme::WIDGET_ACTIVE_BG;
+        ui.visuals_mut().widgets.active.bg_stroke = egui::Stroke::NONE;
+        ui.visuals_mut().widgets.active.rounding = egui::Rounding::ZERO;
+
+        let response = ui.add(
+            egui::DragValue::new(value)
+                .range(range)
+                .speed(1.0),
+        );
+
+        // Restore visuals
+        *ui.visuals_mut() = old_visuals;
+
+        response
+    }
+
+    /// Styled checkbox that follows the style guide.
+    fn styled_checkbox(ui: &mut egui::Ui, checked: &mut bool) -> egui::Response {
+        // Override visuals for this widget
+        let old_visuals = ui.visuals().clone();
+
+        ui.visuals_mut().widgets.inactive.bg_fill = theme::TEXT_EDIT_BG;
+        ui.visuals_mut().widgets.inactive.bg_stroke = egui::Stroke::NONE;
+        ui.visuals_mut().widgets.inactive.rounding = egui::Rounding::ZERO;
+
+        ui.visuals_mut().widgets.hovered.bg_fill = theme::HOVER_BG;
+        ui.visuals_mut().widgets.hovered.bg_stroke = egui::Stroke::NONE;
+        ui.visuals_mut().widgets.hovered.rounding = egui::Rounding::ZERO;
+
+        ui.visuals_mut().widgets.active.bg_fill = theme::WIDGET_ACTIVE_BG;
+        ui.visuals_mut().widgets.active.bg_stroke = egui::Stroke::NONE;
+        ui.visuals_mut().widgets.active.rounding = egui::Rounding::ZERO;
+
+        let response = ui.checkbox(checked, "");
+
+        // Restore visuals
+        *ui.visuals_mut() = old_visuals;
+
+        response
     }
 
     /// Custom icon button with transparent background and hover effect.
