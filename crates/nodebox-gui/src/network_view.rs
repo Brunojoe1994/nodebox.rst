@@ -194,16 +194,19 @@ impl NetworkView {
             let node_response =
                 ui.interact(node_rect, ui.id().with(&child.name), egui::Sense::click_and_drag());
 
-            if node_response.clicked() {
+            // Skip node interactions if hovering a port (tooltip visible = port interaction)
+            let hovering_port = self.hovered_port.is_some() || self.hovered_output.is_some();
+
+            if node_response.clicked() && !hovering_port {
                 node_to_select = Some(child.name.clone());
             }
 
             // Double-click sets the node as rendered
-            if node_response.double_clicked() {
+            if node_response.double_clicked() && !hovering_port {
                 node_to_render = Some(child.name.clone());
             }
 
-            if node_response.drag_started() && !self.is_panning {
+            if node_response.drag_started() && !self.is_panning && !hovering_port {
                 start_dragging_node = Some(child.name.clone());
             }
 
