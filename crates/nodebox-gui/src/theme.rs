@@ -164,7 +164,9 @@ pub const ROW_HEIGHT: f32 = 24.0;
 pub const ADDRESS_BAR_HEIGHT: f32 = TOP_BAR_HEIGHT;
 pub const ANIMATION_BAR_HEIGHT: f32 = 28.0;
 pub const PANE_HEADER_HEIGHT: f32 = TITLE_BAR_HEIGHT;
-pub const LABEL_WIDTH: f32 = 100.0;
+/// Fixed label column width - aligns with pane header separator.
+/// This is the x position of the separator in headers AND the width of the labels column.
+pub const LABEL_WIDTH: f32 = 112.0;
 
 // =============================================================================
 // PANE HEADER COLORS
@@ -247,9 +249,9 @@ pub const DARK_BACKGROUND: Color32 = SLATE_900;
 pub const TEXT_NORMAL: Color32 = TEXT_DEFAULT;
 pub const TEXT_BRIGHT: Color32 = TEXT_STRONG;
 
-// Port/parameter colors
-pub const PORT_LABEL_BACKGROUND: Color32 = SLATE_700;
-pub const PORT_VALUE_BACKGROUND: Color32 = SLATE_800;
+// Port/parameter colors (labels on left are darker)
+pub const PORT_LABEL_BACKGROUND: Color32 = SLATE_800;
+pub const PORT_VALUE_BACKGROUND: Color32 = SLATE_700;
 
 // Tab colors
 pub const SELECTED_TAB_BACKGROUND: Color32 = SLATE_700;

@@ -62,8 +62,8 @@ pub fn draw_pane_header_with_title(
         theme::PANE_HEADER_FOREGROUND_COLOR,
     );
 
-    // Vertical separator line (1px) - 8px after title
-    let sep_x = title_x + title_galley.size().x + theme::PADDING;
+    // Vertical separator line (1px) - at fixed position to align with labels column
+    let sep_x = header_rect.left() + theme::LABEL_WIDTH;
     ui.painter().line_segment(
         [
             egui::pos2(sep_x, header_rect.top() + theme::PADDING_SMALL),

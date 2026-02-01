@@ -23,6 +23,7 @@ impl Default for ParameterPanel {
 
 impl ParameterPanel {
     /// Create a new parameter panel.
+    /// The label_width is set to theme::LABEL_WIDTH to align with the pane header separator.
     pub fn new() -> Self {
         Self {
             label_width: theme::LABEL_WIDTH,
@@ -67,10 +68,31 @@ impl ParameterPanel {
                 // Clone node_name for use in closure
                 let node_name_clone = node_name.clone();
 
-                // Show input ports in a scrollable area
+                // Show input ports in a scrollable area with two-tone background
                 egui::ScrollArea::vertical()
                     .auto_shrink([false, false])
                     .show(ui, |ui| {
+                        // Paint two-tone background
+                        let full_rect = ui.max_rect();
+                        // Left side (labels) - darker
+                        ui.painter().rect_filled(
+                            egui::Rect::from_min_max(
+                                full_rect.min,
+                                egui::pos2(full_rect.left() + self.label_width, full_rect.max.y),
+                            ),
+                            0.0,
+                            theme::PORT_LABEL_BACKGROUND,
+                        );
+                        // Right side (values) - lighter
+                        ui.painter().rect_filled(
+                            egui::Rect::from_min_max(
+                                egui::pos2(full_rect.left() + self.label_width, full_rect.min.y),
+                                full_rect.max,
+                            ),
+                            0.0,
+                            theme::PORT_VALUE_BACKGROUND,
+                        );
+
                         for port in &mut node.inputs {
                             let is_connected = connected_ports.contains(&port.name);
                             self.show_port_row(ui, port, is_connected, &node_name_clone);
@@ -564,6 +586,27 @@ impl ParameterPanel {
 
         // Merged header with "Document"
         self.show_parameters_header(ui, Some("Document"), None);
+
+        // Paint two-tone background for the content area
+        let content_rect = ui.available_rect_before_wrap();
+        // Left side (labels) - darker
+        ui.painter().rect_filled(
+            egui::Rect::from_min_max(
+                content_rect.min,
+                egui::pos2(content_rect.left() + self.label_width, content_rect.max.y),
+            ),
+            0.0,
+            theme::PORT_LABEL_BACKGROUND,
+        );
+        // Right side (values) - lighter
+        ui.painter().rect_filled(
+            egui::Rect::from_min_max(
+                egui::pos2(content_rect.left() + self.label_width, content_rect.min.y),
+                content_rect.max,
+            ),
+            0.0,
+            theme::PORT_VALUE_BACKGROUND,
+        );
 
         // Width
         ui.horizontal(|ui| {
