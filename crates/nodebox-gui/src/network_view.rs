@@ -7,6 +7,7 @@ use std::collections::HashSet;
 
 use crate::icon_cache::IconCache;
 use crate::pan_zoom::PanZoom;
+use crate::theme;
 
 /// Actions that can be triggered by the network view.
 #[derive(Debug, Clone)]
@@ -61,11 +62,6 @@ const PORT_WIDTH: f32 = 12.0;
 const PORT_HEIGHT: f32 = 4.0;
 const PORT_SPACING: f32 = 8.0;
 
-/// Colors matching NodeBox Java Theme.
-const NETWORK_BACKGROUND_COLOR: (u8, u8, u8) = (69, 69, 69);
-const NETWORK_GRID_COLOR: (u8, u8, u8) = (85, 85, 85);
-#[allow(dead_code)]
-const CONNECTION_DEFAULT_COLOR: (u8, u8, u8) = (200, 200, 200);
 
 impl Default for NetworkView {
     fn default() -> Self {
@@ -296,13 +292,13 @@ impl NetworkView {
                         let tooltip_text = format!("{} ({:?})", port_name, port.port_type);
                         let tooltip_pos = Pos2::new(mouse_pos.x + 10.0, mouse_pos.y - 20.0);
                         let font = egui::FontId::proportional(11.0);
-                        let galley = painter.layout_no_wrap(tooltip_text, font, Color32::WHITE);
+                        let galley = painter.layout_no_wrap(tooltip_text, font, theme::TOOLTIP_TEXT);
                         let tooltip_rect = Rect::from_min_size(
                             tooltip_pos,
                             galley.size() + Vec2::splat(8.0),
                         );
-                        painter.rect_filled(tooltip_rect, 4.0, Color32::from_rgb(50, 50, 50));
-                        painter.galley(tooltip_pos + Vec2::splat(4.0), galley, Color32::WHITE);
+                        painter.rect_filled(tooltip_rect, 4.0, theme::TOOLTIP_BG);
+                        painter.galley(tooltip_pos + Vec2::splat(4.0), galley, theme::TOOLTIP_TEXT);
                     }
                 }
             }
@@ -316,13 +312,13 @@ impl NetworkView {
                         let tooltip_text = format!("output ({:?})", node.output_type);
                         let tooltip_pos = Pos2::new(mouse_pos.x + 10.0, mouse_pos.y - 20.0);
                         let font = egui::FontId::proportional(11.0);
-                        let galley = painter.layout_no_wrap(tooltip_text, font, Color32::WHITE);
+                        let galley = painter.layout_no_wrap(tooltip_text, font, theme::TOOLTIP_TEXT);
                         let tooltip_rect = Rect::from_min_size(
                             tooltip_pos,
                             galley.size() + Vec2::splat(8.0),
                         );
-                        painter.rect_filled(tooltip_rect, 4.0, Color32::from_rgb(50, 50, 50));
-                        painter.galley(tooltip_pos + Vec2::splat(4.0), galley, Color32::WHITE);
+                        painter.rect_filled(tooltip_rect, 4.0, theme::TOOLTIP_BG);
+                        painter.galley(tooltip_pos + Vec2::splat(4.0), galley, theme::TOOLTIP_TEXT);
                     }
                 }
             }
@@ -483,20 +479,11 @@ impl NetworkView {
     /// Draw the background grid (Java NodeBox style).
     fn draw_grid(&self, painter: &egui::Painter, rect: Rect) {
         // Background color
-        let bg_color = Color32::from_rgb(
-            NETWORK_BACKGROUND_COLOR.0,
-            NETWORK_BACKGROUND_COLOR.1,
-            NETWORK_BACKGROUND_COLOR.2,
-        );
-        painter.rect_filled(rect, 0.0, bg_color);
+        painter.rect_filled(rect, 0.0, theme::NETWORK_BACKGROUND);
 
         // Grid lines
         let grid_size = GRID_CELL_SIZE * self.pan_zoom.zoom;
-        let grid_color = Color32::from_rgb(
-            NETWORK_GRID_COLOR.0,
-            NETWORK_GRID_COLOR.1,
-            NETWORK_GRID_COLOR.2,
-        );
+        let grid_color = theme::NETWORK_GRID;
 
         // Grid origin is at top-left + pan (same as node coordinate system origin)
         let origin_x = rect.left() + self.pan_zoom.pan.x;
@@ -625,7 +612,7 @@ impl NetworkView {
             egui::Align2::LEFT_CENTER,
             &node.name,
             egui::FontId::proportional(11.0 * self.pan_zoom.zoom),
-            Color32::WHITE,
+            theme::TEXT_STRONG,
         );
 
         // 5. Input ports (small rects on top edge)
@@ -643,7 +630,7 @@ impl NetworkView {
                 .as_ref()
                 .is_some_and(|(n, p)| n == &node.name && p == &port.name)
             {
-                Color32::YELLOW
+                theme::PORT_HOVER
             } else {
                 self.port_type_color(&port.port_type)
             };
@@ -659,7 +646,7 @@ impl NetworkView {
         let out_color = if self.hovered_output.as_ref() == Some(&node.name)
             && self.creating_connection.is_none()
         {
-            Color32::YELLOW
+            theme::PORT_HOVER
         } else {
             self.port_type_color(&node.output_type)
         };
@@ -739,7 +726,7 @@ impl NetworkView {
                 .unwrap_or(&PortType::Geometry);
 
             let color = if is_hovered {
-                Color32::from_rgb(255, 100, 100) // Red for hovered (indicating can delete)
+                theme::CONNECTION_HOVER
             } else {
                 self.port_type_color(port_type)
             };
@@ -789,40 +776,44 @@ impl NetworkView {
     #[allow(dead_code)]
     fn category_color(&self, category: &str) -> Color32 {
         match category.to_lowercase().as_str() {
-            "geometry" | "corevector" => Color32::from_rgb(80, 120, 200),
-            "transform" => Color32::from_rgb(200, 120, 80),
-            "color" => Color32::from_rgb(200, 80, 120),
-            "math" => Color32::from_rgb(120, 200, 80),
-            "list" => Color32::from_rgb(200, 200, 80),
-            "string" => Color32::from_rgb(180, 80, 200),
-            "data" => Color32::from_rgb(80, 200, 200),
-            _ => Color32::from_rgb(100, 100, 100),
+            "geometry" | "corevector" => theme::CATEGORY_GEOMETRY,
+            "transform" => theme::CATEGORY_TRANSFORM,
+            "color" => theme::CATEGORY_COLOR,
+            "math" => theme::CATEGORY_MATH,
+            "list" => theme::CATEGORY_LIST,
+            "string" => theme::CATEGORY_STRING,
+            "data" => theme::CATEGORY_DATA,
+            _ => theme::CATEGORY_DEFAULT,
         }
     }
 
     /// Get a color for a port type (matching Java Theme).
     fn port_type_color(&self, port_type: &PortType) -> Color32 {
         match port_type {
-            PortType::Int | PortType::Float => Color32::from_rgb(116, 119, 121),
-            PortType::String | PortType::Boolean => Color32::from_rgb(92, 90, 91),
-            PortType::Point => Color32::from_rgb(119, 154, 173),
-            PortType::Color => Color32::from_rgb(94, 85, 112),
-            PortType::Geometry => Color32::from_rgb(20, 20, 20),
-            PortType::List => Color32::from_rgb(76, 137, 174),
-            _ => Color32::from_rgb(52, 85, 129), // data/default
+            PortType::Int => theme::PORT_COLOR_INT,
+            PortType::Float => theme::PORT_COLOR_FLOAT,
+            PortType::String => theme::PORT_COLOR_STRING,
+            PortType::Boolean => theme::PORT_COLOR_BOOLEAN,
+            PortType::Point => theme::PORT_COLOR_POINT,
+            PortType::Color => theme::PORT_COLOR_COLOR,
+            PortType::Geometry => theme::PORT_COLOR_GEOMETRY,
+            PortType::List => theme::PORT_COLOR_LIST,
+            _ => theme::PORT_COLOR_DATA,
         }
     }
 
     /// Get a color for a node's output type (colors the entire node body).
     fn output_type_color(&self, output_type: &PortType) -> Color32 {
         match output_type {
-            PortType::Int | PortType::Float => Color32::from_rgb(116, 119, 121),
-            PortType::String | PortType::Boolean => Color32::from_rgb(92, 90, 91),
-            PortType::Point => Color32::from_rgb(119, 154, 173),
-            PortType::Color => Color32::from_rgb(94, 85, 112),
-            PortType::Geometry => Color32::from_rgb(20, 20, 20),
-            PortType::List => Color32::from_rgb(76, 137, 174),
-            _ => Color32::from_rgb(52, 85, 129), // data/default
+            PortType::Int => theme::PORT_COLOR_INT,
+            PortType::Float => theme::PORT_COLOR_FLOAT,
+            PortType::String => theme::PORT_COLOR_STRING,
+            PortType::Boolean => theme::PORT_COLOR_BOOLEAN,
+            PortType::Point => theme::PORT_COLOR_POINT,
+            PortType::Color => theme::PORT_COLOR_COLOR,
+            PortType::Geometry => theme::PORT_COLOR_GEOMETRY,
+            PortType::List => theme::PORT_COLOR_LIST,
+            _ => theme::PORT_COLOR_DATA,
         }
     }
 }

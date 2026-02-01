@@ -255,6 +255,43 @@ pub const ANIMATION_BAR_BACKGROUND: Color32 = GRAY_100;
 pub const NETWORK_BACKGROUND: Color32 = GRAY_100;
 pub const NETWORK_GRID: Color32 = GRAY_150;
 
+// Network View - Tooltips
+pub const TOOLTIP_BG: Color32 = SURFACE_ELEVATED;
+pub const TOOLTIP_TEXT: Color32 = TEXT_STRONG;
+
+// Network View - Connections
+pub const CONNECTION_HOVER: Color32 = ERROR_RED; // Red indicates deletable
+pub const PORT_HOVER: Color32 = VIOLET_400; // Accent for interactive
+
+// Node Category Colors (for node icons/identity)
+pub const CATEGORY_GEOMETRY: Color32 = Color32::from_rgb(80, 120, 200);
+pub const CATEGORY_TRANSFORM: Color32 = Color32::from_rgb(200, 120, 80);
+pub const CATEGORY_COLOR: Color32 = Color32::from_rgb(200, 80, 120);
+pub const CATEGORY_MATH: Color32 = Color32::from_rgb(120, 200, 80);
+pub const CATEGORY_LIST: Color32 = Color32::from_rgb(200, 200, 80);
+pub const CATEGORY_STRING: Color32 = Color32::from_rgb(180, 80, 200);
+pub const CATEGORY_DATA: Color32 = Color32::from_rgb(80, 200, 200);
+pub const CATEGORY_DEFAULT: Color32 = GRAY_400;
+
+// Handle Colors (violet-based to match accent)
+pub const HANDLE_PRIMARY: Color32 = VIOLET_500;
+
+// Canvas/Viewer grid (uses alpha, so defined as function)
+pub fn viewer_grid() -> Color32 {
+    Color32::from_rgba_unmultiplied(200, 200, 200, 30)
+}
+pub const VIEWER_CROSSHAIR: Color32 = GRAY_500;
+
+// Point Type Visualization
+pub const POINT_LINE_TO: Color32 = Color32::from_rgb(100, 200, 100);
+pub const POINT_CURVE_TO: Color32 = Color32::from_rgb(200, 100, 100);
+pub const POINT_CURVE_DATA: Color32 = Color32::from_rgb(100, 100, 200);
+
+// Timeline
+pub const TIMELINE_BG: Color32 = GRAY_150;
+pub const TIMELINE_MARKER: Color32 = GRAY_300;
+pub const TIMELINE_PLAYHEAD: Color32 = ERROR_RED;
+
 // Port type colors (semantic colors for data types)
 pub const PORT_COLOR_INT: Color32 = Color32::from_rgb(99, 102, 241);    // Indigo
 pub const PORT_COLOR_FLOAT: Color32 = Color32::from_rgb(99, 102, 241);  // Indigo
