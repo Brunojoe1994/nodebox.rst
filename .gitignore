@@ -5,7 +5,6 @@ out
 reports
 /bin
 target
-/tmp
 
 # Mac OS X custom attribute files
 .DS_Store
@@ -20,6 +19,3 @@ Thumbs.db
 # Jython package cache and compiled files
 lib/cachedir
 *$py.class
-
-# Secrets
-.env
