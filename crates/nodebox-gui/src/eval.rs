@@ -3,6 +3,7 @@
 use std::collections::HashMap;
 use nodebox_core::geometry::{Path, Point, Color, Contour, PathPoint, PointType};
 use nodebox_core::node::{Node, NodeLibrary};
+use nodebox_core::node::PortRange;
 use nodebox_core::Value;
 
 /// The result of evaluating a node.
@@ -83,6 +84,28 @@ impl NodeOutput {
             _ => None,
         }
     }
+
+    /// Convert any output to a list of individual values for list matching.
+    fn to_value_list(&self) -> Vec<NodeOutput> {
+        match self {
+            NodeOutput::None => vec![],
+            NodeOutput::Path(p) => vec![NodeOutput::Path(p.clone())],
+            NodeOutput::Paths(ps) => ps.iter().map(|p| NodeOutput::Path(p.clone())).collect(),
+            NodeOutput::Point(p) => vec![NodeOutput::Point(*p)],
+            NodeOutput::Points(pts) => pts.iter().map(|p| NodeOutput::Point(*p)).collect(),
+            v => vec![v.clone()], // Single values remain single
+        }
+    }
+
+    /// Get the list length for this output (for list matching iteration count).
+    fn list_len(&self) -> usize {
+        match self {
+            NodeOutput::Paths(ps) => ps.len(),
+            NodeOutput::Points(pts) => pts.len(),
+            NodeOutput::None => 0,
+            _ => 1,
+        }
+    }
 }
 
 /// Evaluate a node network and return the output of the rendered node.
@@ -105,6 +128,94 @@ pub fn evaluate_network(library: &NodeLibrary) -> Vec<Path> {
     let output = evaluate_node(network, &rendered_name, &mut cache);
 
     output.to_paths()
+}
+
+/// Determine how many times to execute the node for list matching.
+/// Returns None if any VALUE-range input is empty.
+fn compute_iteration_count(
+    inputs: &HashMap<String, NodeOutput>,
+    node: &Node,
+) -> Option<usize> {
+    let mut max_size = 1usize;
+
+    // Check inputs that have corresponding port definitions with range info
+    for port in &node.inputs {
+        if port.range == PortRange::List {
+            continue; // LIST-range ports don't contribute to iteration count
+        }
+        if let Some(output) = inputs.get(&port.name) {
+            let size = output.list_len();
+            if size == 0 {
+                return None; // Empty list → no output
+            }
+            max_size = max_size.max(size);
+        }
+    }
+
+    // Also check inputs that don't have port definitions (from connections)
+    // These are treated as VALUE-range by default
+    for (name, output) in inputs {
+        // Skip if we already processed this port above
+        if node.inputs.iter().any(|p| &p.name == name) {
+            continue;
+        }
+        let size = output.list_len();
+        if size == 0 {
+            return None;
+        }
+        max_size = max_size.max(size);
+    }
+
+    Some(max_size)
+}
+
+/// Build inputs for a single iteration with wrapping.
+fn build_iteration_inputs(
+    inputs: &HashMap<String, NodeOutput>,
+    node: &Node,
+    iteration: usize,
+) -> HashMap<String, NodeOutput> {
+    let mut result = HashMap::new();
+
+    for (name, output) in inputs {
+        // Check if there's a port definition for this input
+        let port = node.inputs.iter().find(|p| &p.name == name);
+        let is_list_range = port.map_or(false, |p| p.range == PortRange::List);
+
+        let value = if is_list_range {
+            output.clone() // Pass entire list for LIST-range ports
+        } else {
+            let list = output.to_value_list();
+            if list.is_empty() {
+                NodeOutput::None
+            } else {
+                list[iteration % list.len()].clone() // Wrap
+            }
+        };
+        result.insert(name.clone(), value);
+    }
+    result
+}
+
+/// Combine results from multiple iterations.
+fn collect_results(results: Vec<NodeOutput>) -> NodeOutput {
+    if results.is_empty() {
+        return NodeOutput::None;
+    }
+    if results.len() == 1 {
+        return results.into_iter().next().unwrap();
+    }
+
+    // Collect as Paths (most common case for geometry operations)
+    let paths: Vec<Path> = results.into_iter()
+        .flat_map(|r| r.to_paths())
+        .collect();
+
+    if paths.is_empty() {
+        NodeOutput::None
+    } else {
+        NodeOutput::Paths(paths)
+    }
 }
 
 /// Evaluate a single node, recursively evaluating its dependencies.
@@ -153,8 +264,48 @@ fn evaluate_node(
         }
     }
 
-    // Execute the node function
-    let output = execute_node(node, &inputs);
+    // Also collect inputs from connections that don't have corresponding port definitions
+    // This handles nodes loaded from ndbx files that may not have all ports defined
+    for conn in &network.connections {
+        if conn.input_node == node_name && !inputs.contains_key(&conn.input_port) {
+            // Check if there are multiple connections to this port
+            let all_conns: Vec<_> = network.connections
+                .iter()
+                .filter(|c| c.input_node == node_name && c.input_port == conn.input_port)
+                .collect();
+
+            if all_conns.len() == 1 {
+                let upstream_output = evaluate_node(network, &conn.output_node, cache);
+                inputs.insert(conn.input_port.clone(), upstream_output);
+            } else {
+                // Multiple connections - collect all outputs as paths
+                let mut all_paths: Vec<Path> = Vec::new();
+                for c in all_conns {
+                    let upstream_output = evaluate_node(network, &c.output_node, cache);
+                    all_paths.extend(upstream_output.to_paths());
+                }
+                inputs.insert(conn.input_port.clone(), NodeOutput::Paths(all_paths));
+            }
+        }
+    }
+
+    // Determine iteration count for list matching
+    let iteration_count = compute_iteration_count(&inputs, node);
+
+    let output = match iteration_count {
+        None => NodeOutput::None, // Empty list input
+        Some(1) => execute_node(node, &inputs), // Single iteration (optimization)
+        Some(count) => {
+            // Multiple iterations: list matching
+            let mut results = Vec::with_capacity(count);
+            for i in 0..count {
+                let iter_inputs = build_iteration_inputs(&inputs, node, i);
+                let result = execute_node(node, &iter_inputs);
+                results.push(result);
+            }
+            collect_results(results)
+        }
+    };
 
     // Cache and return
     cache.insert(node_name.to_string(), output.clone());
@@ -200,6 +351,7 @@ fn get_int(inputs: &HashMap<String, NodeOutput>, name: &str, default: i64) -> i6
 fn get_point(inputs: &HashMap<String, NodeOutput>, name: &str, default: Point) -> Point {
     match inputs.get(name) {
         Some(NodeOutput::Point(p)) => *p,
+        Some(NodeOutput::Points(pts)) if !pts.is_empty() => pts[0], // Fallback for safety
         _ => default,
     }
 }
@@ -702,7 +854,7 @@ fn execute_node(node: &Node, inputs: &HashMap<String, NodeOutput>) -> NodeOutput
 #[cfg(test)]
 mod tests {
     use super::*;
-    use nodebox_core::node::{Port, Connection};
+    use nodebox_core::node::{Port, Connection, PortRange};
 
     #[test]
     fn test_evaluate_simple_ellipse() {
@@ -1088,7 +1240,8 @@ mod tests {
             .with_child(
                 Node::new("connect1")
                     .with_prototype("corevector.connect")
-                    .with_input(Port::geometry("points"))
+                    // points port expects entire list, not individual values
+                    .with_input(Port::geometry("points").with_port_range(PortRange::List))
                     .with_input(Port::boolean("closed", false))
             )
             .with_connection(Connection::new("grid1", "connect1", "points"))
@@ -1306,7 +1459,8 @@ mod tests {
             .with_child(
                 Node::new("connect1")
                     .with_prototype("corevector.connect")
-                    .with_input(Port::geometry("points"))
+                    // points port expects entire list, not individual values
+                    .with_input(Port::geometry("points").with_port_range(PortRange::List))
                     .with_input(Port::boolean("closed", false))
             )
             .with_connection(Connection::new("grid1", "connect1", "points"))
@@ -1415,5 +1569,241 @@ mod tests {
 
         let output = NodeOutput::Float(1.0);
         assert!(output.as_paths().is_none());
+    }
+
+    #[test]
+    fn test_list_combine_single_items() {
+        // Test that list.combine works when each input is a single path
+        // This mimics the primitives.ndbx structure: colorize1 -> combine.list1, etc.
+        let mut library = NodeLibrary::new("test");
+        library.root = Node::network("root")
+            .with_child(
+                Node::new("rect1")
+                    .with_prototype("corevector.rect")
+                    .with_input(Port::point("position", Point::new(-100.0, 0.0)))
+                    .with_input(Port::float("width", 50.0))
+                    .with_input(Port::float("height", 50.0)),
+            )
+            .with_child(
+                Node::new("ellipse1")
+                    .with_prototype("corevector.ellipse")
+                    .with_input(Port::point("position", Point::new(0.0, 0.0)))
+                    .with_input(Port::float("width", 50.0))
+                    .with_input(Port::float("height", 50.0)),
+            )
+            .with_child(
+                Node::new("polygon1")
+                    .with_prototype("corevector.polygon")
+                    .with_input(Port::point("position", Point::new(100.0, 0.0)))
+                    .with_input(Port::float("radius", 25.0))
+                    .with_input(Port::int("sides", 6)),
+            )
+            .with_child(
+                Node::new("combine1")
+                    .with_prototype("list.combine")
+                    // Note: list.combine ports should accept lists, not iterate over them
+                    .with_input(Port::geometry("list1").with_port_range(PortRange::List))
+                    .with_input(Port::geometry("list2").with_port_range(PortRange::List))
+                    .with_input(Port::geometry("list3").with_port_range(PortRange::List)),
+            )
+            .with_connection(Connection::new("rect1", "combine1", "list1"))
+            .with_connection(Connection::new("ellipse1", "combine1", "list2"))
+            .with_connection(Connection::new("polygon1", "combine1", "list3"))
+            .with_rendered_child("combine1");
+
+        let paths = evaluate_network(&library);
+
+        assert_eq!(
+            paths.len(),
+            3,
+            "list.combine should produce 3 paths (one from each input), got {}",
+            paths.len()
+        );
+    }
+
+    #[test]
+    fn test_list_combine_with_colorize_chain() {
+        // Test the full primitives.ndbx structure:
+        // rect1 -> colorize1 -> combine1.list1
+        // ellipse1 -> colorize2 -> combine1.list2
+        // polygon1 -> colorize3 -> combine1.list3
+        let mut library = NodeLibrary::new("test");
+        library.root = Node::network("root")
+            .with_child(
+                Node::new("rect1")
+                    .with_prototype("corevector.rect")
+                    .with_input(Port::point("position", Point::new(-100.0, 0.0)))
+                    .with_input(Port::float("width", 50.0))
+                    .with_input(Port::float("height", 50.0)),
+            )
+            .with_child(
+                Node::new("ellipse1")
+                    .with_prototype("corevector.ellipse")
+                    .with_input(Port::point("position", Point::new(0.0, 0.0)))
+                    .with_input(Port::float("width", 50.0))
+                    .with_input(Port::float("height", 50.0)),
+            )
+            .with_child(
+                Node::new("polygon1")
+                    .with_prototype("corevector.polygon")
+                    .with_input(Port::point("position", Point::new(100.0, 0.0)))
+                    .with_input(Port::float("radius", 25.0))
+                    .with_input(Port::int("sides", 6)),
+            )
+            .with_child(
+                Node::new("colorize1")
+                    .with_prototype("corevector.colorize")
+                    .with_input(Port::geometry("shape"))
+                    .with_input(Port::color("fill", Color::rgb(1.0, 0.0, 0.0))),
+            )
+            .with_child(
+                Node::new("colorize2")
+                    .with_prototype("corevector.colorize")
+                    .with_input(Port::geometry("shape"))
+                    .with_input(Port::color("fill", Color::rgb(0.0, 1.0, 0.0))),
+            )
+            .with_child(
+                Node::new("colorize3")
+                    .with_prototype("corevector.colorize")
+                    .with_input(Port::geometry("shape"))
+                    .with_input(Port::color("fill", Color::rgb(0.0, 0.0, 1.0))),
+            )
+            .with_child(
+                Node::new("combine1")
+                    .with_prototype("list.combine")
+                    // NO port definitions - simulates ndbx file
+            )
+            .with_connection(Connection::new("rect1", "colorize1", "shape"))
+            .with_connection(Connection::new("ellipse1", "colorize2", "shape"))
+            .with_connection(Connection::new("polygon1", "colorize3", "shape"))
+            .with_connection(Connection::new("colorize1", "combine1", "list1"))
+            .with_connection(Connection::new("colorize2", "combine1", "list2"))
+            .with_connection(Connection::new("colorize3", "combine1", "list3"))
+            .with_rendered_child("combine1");
+
+        let paths = evaluate_network(&library);
+
+        assert_eq!(
+            paths.len(),
+            3,
+            "combine1 should produce 3 colorized paths, got {}",
+            paths.len()
+        );
+
+        // Verify all paths have fills
+        for (i, path) in paths.iter().enumerate() {
+            assert!(path.fill.is_some(), "Path {} should have a fill color", i);
+        }
+    }
+
+    #[test]
+    fn test_colorize_without_shape_port_defined() {
+        // Test colorize when the shape port is NOT defined (as in ndbx files)
+        // The ndbx file only defines ports that have non-default values
+        let mut library = NodeLibrary::new("test");
+        library.root = Node::network("root")
+            .with_child(
+                Node::new("rect1")
+                    .with_prototype("corevector.rect")
+                    .with_input(Port::point("position", Point::ZERO))
+                    .with_input(Port::float("width", 50.0))
+                    .with_input(Port::float("height", 50.0)),
+            )
+            .with_child(
+                Node::new("colorize1")
+                    .with_prototype("corevector.colorize")
+                    // Only fill is defined, NOT shape - mimics ndbx file
+                    .with_input(Port::color("fill", Color::rgb(1.0, 0.0, 0.0))),
+            )
+            .with_connection(Connection::new("rect1", "colorize1", "shape"))
+            .with_rendered_child("colorize1");
+
+        let paths = evaluate_network(&library);
+
+        assert_eq!(
+            paths.len(),
+            1,
+            "colorize1 should produce 1 path even without shape port defined, got {}",
+            paths.len()
+        );
+        assert!(paths[0].fill.is_some(), "Path should have a fill color");
+    }
+
+    #[test]
+    fn test_list_combine_without_port_range() {
+        // Test what happens when list.combine ports don't have PortRange::List set
+        // This is the case when loading from ndbx files that don't define ports
+        let mut library = NodeLibrary::new("test");
+        library.root = Node::network("root")
+            .with_child(
+                Node::new("rect1")
+                    .with_prototype("corevector.rect")
+                    .with_input(Port::point("position", Point::new(-100.0, 0.0)))
+                    .with_input(Port::float("width", 50.0))
+                    .with_input(Port::float("height", 50.0)),
+            )
+            .with_child(
+                Node::new("ellipse1")
+                    .with_prototype("corevector.ellipse")
+                    .with_input(Port::point("position", Point::new(0.0, 0.0)))
+                    .with_input(Port::float("width", 50.0))
+                    .with_input(Port::float("height", 50.0)),
+            )
+            .with_child(
+                Node::new("combine1")
+                    .with_prototype("list.combine")
+                    // NO port definitions - simulates ndbx file without explicit ports
+            )
+            .with_connection(Connection::new("rect1", "combine1", "list1"))
+            .with_connection(Connection::new("ellipse1", "combine1", "list2"))
+            .with_rendered_child("combine1");
+
+        let paths = evaluate_network(&library);
+
+        // With no port definitions, list matching treats inputs as VALUE range
+        // Each input is a single path, so iteration count = 1
+        // list.combine should still combine them
+        assert_eq!(
+            paths.len(),
+            2,
+            "list.combine should produce 2 paths even without port definitions, got {}",
+            paths.len()
+        );
+    }
+
+    #[test]
+    fn test_grid_to_rect_list_matching() {
+        // This test reproduces the bug: grid (100 points) -> rect should produce 100 rects
+        let mut library = NodeLibrary::new("test");
+        library.root = Node::network("root")
+            .with_child(
+                Node::new("grid1")
+                    .with_prototype("corevector.grid")
+                    .with_input(Port::int("columns", 10))
+                    .with_input(Port::int("rows", 10))
+                    .with_input(Port::float("width", 300.0))
+                    .with_input(Port::float("height", 300.0))
+                    .with_input(Port::point("position", Point::ZERO)),
+            )
+            .with_child(
+                Node::new("rect1")
+                    .with_prototype("corevector.rect")
+                    .with_input(Port::point("position", Point::ZERO))
+                    .with_input(Port::float("width", 20.0))
+                    .with_input(Port::float("height", 20.0))
+                    .with_input(Port::point("roundness", Point::ZERO)),
+            )
+            .with_connection(Connection::new("grid1", "rect1", "position"))
+            .with_rendered_child("rect1");
+
+        let paths = evaluate_network(&library);
+
+        // THE KEY ASSERTION: Must produce 100 rectangles, not 1!
+        assert_eq!(
+            paths.len(),
+            100,
+            "Grid (10x10=100 points) -> rect should produce 100 rectangles, got {}",
+            paths.len()
+        );
     }
 }

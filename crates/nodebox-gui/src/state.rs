@@ -2,7 +2,7 @@
 
 use std::path::{Path, PathBuf};
 use nodebox_core::geometry::{Path as GeoPath, Color};
-use nodebox_core::node::{Node, NodeLibrary, Port, Connection};
+use nodebox_core::node::{Node, NodeLibrary, Port, PortRange, Connection};
 use crate::eval;
 
 /// The main application state.
@@ -285,14 +285,29 @@ pub fn populate_default_ports(node: &mut Node) {
             }
             // Combine operations
             "corevector.merge" | "corevector.combine" => {
-                ensure_port(node, "shapes", || Port::geometry("shapes"));
+                // shapes port expects a list of shapes, not individual values to iterate over
+                ensure_port(node, "shapes", || Port::geometry("shapes").with_port_range(PortRange::List));
+            }
+            "corevector.group" => {
+                ensure_port(node, "shapes", || Port::geometry("shapes").with_port_range(PortRange::List));
+            }
+            "corevector.stack" => {
+                ensure_port(node, "shapes", || Port::geometry("shapes").with_port_range(PortRange::List));
+                ensure_port(node, "direction", || Port::string("direction", "east"));
+                ensure_port(node, "margin", || Port::float("margin", 0.0));
+            }
+            "corevector.sort" => {
+                ensure_port(node, "shapes", || Port::geometry("shapes").with_port_range(PortRange::List));
+                ensure_port(node, "order_by", || Port::string("order_by", "x"));
+                ensure_port(node, "position", || Port::point("position", nodebox_core::geometry::Point::ZERO));
             }
             "list.combine" => {
-                ensure_port(node, "list1", || Port::geometry("list1"));
-                ensure_port(node, "list2", || Port::geometry("list2"));
-                ensure_port(node, "list3", || Port::geometry("list3"));
-                ensure_port(node, "list4", || Port::geometry("list4"));
-                ensure_port(node, "list5", || Port::geometry("list5"));
+                // list.combine ports should be LIST-range so empty inputs don't block evaluation
+                ensure_port(node, "list1", || Port::geometry("list1").with_port_range(PortRange::List));
+                ensure_port(node, "list2", || Port::geometry("list2").with_port_range(PortRange::List));
+                ensure_port(node, "list3", || Port::geometry("list3").with_port_range(PortRange::List));
+                ensure_port(node, "list4", || Port::geometry("list4").with_port_range(PortRange::List));
+                ensure_port(node, "list5", || Port::geometry("list5").with_port_range(PortRange::List));
             }
             // Grid
             "corevector.grid" => {
@@ -304,7 +319,8 @@ pub fn populate_default_ports(node: &mut Node) {
             }
             // Connect
             "corevector.connect" => {
-                ensure_port(node, "points", || Port::geometry("points"));
+                // points port expects a list of points, not individual values to iterate over
+                ensure_port(node, "points", || Port::geometry("points").with_port_range(PortRange::List));
                 ensure_port(node, "closed", || Port::boolean("closed", false));
             }
             // Point
