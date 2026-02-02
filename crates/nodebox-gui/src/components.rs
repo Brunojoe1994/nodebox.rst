@@ -269,22 +269,12 @@ pub fn header_segmented_control(
     let width1 = galley1.size().x + padding_h * 2.0;
     let total_width = width0 + width1;
 
-    // Draw background flush with header content area (respecting 1px borders)
+    // Content area respecting 1px borders
     let content_top = header_rect.top() + 1.0;
     let content_bottom = header_rect.bottom() - 1.0;
     let content_height = content_bottom - content_top;
 
-    let bg_rect = Rect::from_min_size(
-        egui::pos2(x, content_top),
-        egui::vec2(total_width, content_height),
-    );
-    ui.painter().rect_filled(
-        bg_rect,
-        0.0,
-        theme::SLATE_700,
-    );
-
-    // Draw the selected segment highlight
+    // Only draw the selected segment (unselected is transparent/header bg)
     let selected_x = if selected == 0 { x } else { x + width0 };
     let selected_width = if selected == 0 { width0 } else { width1 };
     let selected_rect = Rect::from_min_size(
@@ -294,7 +284,7 @@ pub fn header_segmented_control(
     ui.painter().rect_filled(
         selected_rect,
         0.0,
-        theme::SLATE_500,
+        theme::SLATE_700,
     );
 
     // Create interaction rects and draw labels
