@@ -11,6 +11,7 @@
         "Bash(grep *)",
         "WebSearch",
         "WebFetch(domain:docs.rs)"
-      ]
+      ],
+      "deny": ["Read(.env)"]
     }
   }
