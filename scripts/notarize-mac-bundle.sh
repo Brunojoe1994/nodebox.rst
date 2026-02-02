@@ -1,15 +1,10 @@
 #!/bin/bash
 # Notarize macOS application bundle for NodeBox
 #
-# Prerequisites:
-# 1. Store credentials in keychain (one-time setup):
-#    xcrun notarytool store-credentials "nodebox-notarize" \
-#        --apple-id "your@email.com" \
-#        --team-id "TEAMID" \
-#        --password "app-specific-password"
-#
-# Required environment variables (can be set in .env file):
-#   KEYCHAIN_PROFILE - Notarization keychain profile name (default: "nodebox-notarize")
+# Required environment variables (set in .env file via ./scripts/setup-secrets.sh):
+#   APPLE_ID          - Apple ID email for notarization
+#   APPLE_ID_PASSWORD - App-specific password for notarization
+#   APPLE_TEAM_ID     - Apple Developer Team ID
 #
 # Usage: ./scripts/notarize-mac-bundle.sh [--release|--debug]
 
@@ -25,8 +20,13 @@ if [ -f "$PROJECT_ROOT/.env" ]; then
     set +a
 fi
 
-# Default keychain profile
-KEYCHAIN_PROFILE="${KEYCHAIN_PROFILE:-nodebox-notarize}"
+# Validate required environment variables
+if [ -z "$APPLE_ID" ] || [ -z "$APPLE_ID_PASSWORD" ] || [ -z "$APPLE_TEAM_ID" ]; then
+    echo "Error: Missing required environment variables"
+    echo "Required: APPLE_ID, APPLE_ID_PASSWORD, APPLE_TEAM_ID"
+    echo "Run ./scripts/setup-secrets.sh to create the .env file"
+    exit 1
+fi
 
 # Default to release build
 BUILD_TYPE="release"
@@ -58,9 +58,10 @@ ditto -c -k --keepParent "$BUNDLE_DIR" "$ZIP_PATH"
 
 # Submit for notarization
 echo "Submitting for notarization..."
-echo "Using keychain profile: $KEYCHAIN_PROFILE"
 xcrun notarytool submit "$ZIP_PATH" \
-    --keychain-profile "$KEYCHAIN_PROFILE" \
+    --apple-id "$APPLE_ID" \
+    --team-id "$APPLE_TEAM_ID" \
+    --password "$APPLE_ID_PASSWORD" \
     --wait
 
 # Staple the notarization ticket
