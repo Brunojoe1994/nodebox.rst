@@ -251,7 +251,6 @@ pub fn header_segmented_control(
 ) -> (Option<usize>, f32) {
     let font = egui::FontId::proportional(11.0);
     let padding_h = 6.0; // Horizontal padding inside each segment
-    let segment_height = 16.0;
     let y_center = header_rect.center().y;
 
     // Calculate widths for each segment
@@ -270,27 +269,27 @@ pub fn header_segmented_control(
     let width1 = galley1.size().x + padding_h * 2.0;
     let total_width = width0 + width1;
 
-    // Draw background pill for the entire control
-    let bg_rect = Rect::from_center_size(
-        egui::pos2(x + total_width / 2.0, y_center),
-        egui::vec2(total_width, segment_height),
+    // Draw background flush with header (no rounded corners)
+    let bg_rect = Rect::from_min_size(
+        egui::pos2(x, header_rect.top()),
+        egui::vec2(total_width, header_rect.height()),
     );
     ui.painter().rect_filled(
         bg_rect,
-        theme::CORNER_RADIUS_SMALL,
+        0.0,
         theme::SLATE_700,
     );
 
-    // Draw the selected segment highlight
+    // Draw the selected segment highlight (flush with header)
     let selected_x = if selected == 0 { x } else { x + width0 };
     let selected_width = if selected == 0 { width0 } else { width1 };
-    let selected_rect = Rect::from_center_size(
-        egui::pos2(selected_x + selected_width / 2.0, y_center),
-        egui::vec2(selected_width, segment_height),
+    let selected_rect = Rect::from_min_size(
+        egui::pos2(selected_x, header_rect.top()),
+        egui::vec2(selected_width, header_rect.height()),
     );
     ui.painter().rect_filled(
         selected_rect,
-        theme::CORNER_RADIUS_SMALL,
+        0.0,
         theme::SLATE_500,
     );
 
