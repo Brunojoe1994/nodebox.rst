@@ -391,7 +391,8 @@ impl NodeBoxApp {
 }
 
 impl eframe::App for NodeBoxApp {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+    #[allow(unused_variables)]
+    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         // Poll for native menu events (macOS system menu bar)
         if let Some(ref native_menu) = self.native_menu {
             if let Some(action) = native_menu.poll_event() {
@@ -410,7 +411,7 @@ impl eframe::App for NodeBoxApp {
         // 1. Menu bar (top-most) - only show in-window menu on non-macOS platforms
         #[cfg(not(target_os = "macos"))]
         egui::TopBottomPanel::top("menu_bar")
-            .frame(egui::Frame::none().fill(theme::PANEL_BG))
+            .frame(egui::Frame::NONE.fill(theme::PANEL_BG))
             .show(ctx, |ui| {
                 self.show_menu_bar(ui, ctx);
             });
@@ -418,7 +419,7 @@ impl eframe::App for NodeBoxApp {
         // 2. Address bar (below menu) - frameless, handles its own styling
         egui::TopBottomPanel::top("address_bar")
             .exact_height(theme::ADDRESS_BAR_HEIGHT)
-            .frame(egui::Frame::none())
+            .frame(egui::Frame::NONE)
             .show(ctx, |ui| {
                 // Update address bar message with current state
                 let node_count = self.state.library.root.children.len();
@@ -433,7 +434,7 @@ impl eframe::App for NodeBoxApp {
         // 3. Animation bar (bottom) - frameless, handles its own styling
         egui::TopBottomPanel::bottom("animation_bar")
             .exact_height(theme::ANIMATION_BAR_HEIGHT)
-            .frame(egui::Frame::none())
+            .frame(egui::Frame::NONE)
             .show(ctx, |ui| {
                 let _event = self.animation_bar.show(ui);
             });
@@ -449,7 +450,7 @@ impl eframe::App for NodeBoxApp {
             .default_width(450.0)
             .min_width(300.0)
             .resizable(true)
-            .frame(egui::Frame::none().fill(theme::PANEL_BG))
+            .frame(egui::Frame::NONE.fill(theme::PANEL_BG))
             .show(ctx, |ui| {
                 // Remove default spacing to have tighter control
                 ui.spacing_mut().item_spacing = egui::vec2(0.0, 0.0);
@@ -464,7 +465,7 @@ impl eframe::App for NodeBoxApp {
                     Vec2::new(available.width(), split_y),
                 );
 
-                ui.allocate_new_ui(egui::UiBuilder::new().max_rect(params_rect), |ui| {
+                ui.scope_builder(egui::UiBuilder::new().max_rect(params_rect), |ui| {
                     ui.set_clip_rect(params_rect);
                     self.parameters.show(ui, &mut self.state);
                 });
@@ -475,7 +476,7 @@ impl eframe::App for NodeBoxApp {
                     available.max,
                 );
 
-                ui.allocate_new_ui(egui::UiBuilder::new().max_rect(network_rect), |ui| {
+                ui.scope_builder(egui::UiBuilder::new().max_rect(network_rect), |ui| {
                     ui.set_clip_rect(network_rect);
 
                     // Network header with "+ New Node" button
@@ -517,7 +518,7 @@ impl eframe::App for NodeBoxApp {
 
         // 5. Central panel: Viewer (left side, takes remaining space) - clean frame
         egui::CentralPanel::default()
-            .frame(egui::Frame::none().fill(theme::PANEL_BG))
+            .frame(egui::Frame::NONE.fill(theme::PANEL_BG))
             .show(ctx, |ui| {
                 // Update handles for selected node
                 self.viewer_pane.update_handles_for_node(
@@ -526,7 +527,14 @@ impl eframe::App for NodeBoxApp {
                 );
 
                 // Show viewer and handle interactions
-                match self.viewer_pane.show(ui, &self.state) {
+                // Get wgpu render state for GPU-accelerated rendering (when available)
+                #[cfg(feature = "gpu-rendering")]
+                let render_state = frame.wgpu_render_state();
+                #[cfg(not(feature = "gpu-rendering"))]
+                let render_state: Option<&crate::viewer_pane::RenderState> = None;
+
+                let result = self.viewer_pane.show(ui, &self.state, render_state);
+                match result {
                     HandleResult::PointChange { param, value } => {
                         self.handle_parameter_change(&param, value);
                     }

@@ -11,7 +11,7 @@ path = "src/main.rs"
 
 [dependencies]
 nodebox-gui = { path = "crates/nodebox-gui" }
-eframe = "0.30"
+eframe = "0.33"
 
 [workspace]
 resolver = "2"
@@ -65,3 +65,7 @@ thiserror = "1.0"
 # Testing
 proptest = "1.4"
 approx = "0.5"
+
+# GPU rendering (optional)
+vello = "0.7"
+pollster = "0.4"

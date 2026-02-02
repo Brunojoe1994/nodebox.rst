@@ -8,6 +8,20 @@ use crate::pan_zoom::PanZoom;
 use crate::state::AppState;
 use crate::theme;
 
+#[cfg(feature = "gpu-rendering")]
+use crate::vello_viewer::VelloViewer;
+#[cfg(feature = "gpu-rendering")]
+use std::hash::{Hash, Hasher};
+
+/// Re-export or define RenderState type for unified API.
+/// When gpu-rendering is enabled, this is egui_wgpu::RenderState.
+/// When disabled, we use a unit type placeholder.
+#[cfg(feature = "gpu-rendering")]
+pub type RenderState = egui_wgpu::RenderState;
+
+#[cfg(not(feature = "gpu-rendering"))]
+pub type RenderState = ();
+
 /// Result of handle interaction.
 #[derive(Clone, Debug)]
 pub enum HandleResult {
@@ -79,7 +93,7 @@ impl DigitCache {
         let font_id = egui::FontId::proportional(font_size);
 
         // Get the galley for measuring
-        let galley = ctx.fonts(|f| {
+        let galley = ctx.fonts_mut(|f| {
             f.layout_no_wrap(digit.to_string(), font_id.clone(), Color32::WHITE)
         });
 
@@ -129,6 +143,7 @@ impl DigitCache {
         ColorImage {
             size: [width, height],
             pixels,
+            source_size: egui::Vec2::new(width as f32, height as f32),
         }
     }
 
@@ -203,6 +218,12 @@ pub struct ViewerPane {
     is_panning: bool,
     /// Cached digit textures for point numbers.
     digit_cache: DigitCache,
+    /// GPU-accelerated Vello viewer (when gpu-rendering feature is enabled).
+    #[cfg(feature = "gpu-rendering")]
+    vello_viewer: VelloViewer,
+    /// Whether to use GPU rendering (can be toggled at runtime).
+    #[cfg(feature = "gpu-rendering")]
+    pub use_gpu_rendering: bool,
 }
 
 impl Default for ViewerPane {
@@ -228,6 +249,10 @@ impl ViewerPane {
             is_space_pressed: false,
             is_panning: false,
             digit_cache: DigitCache::new(),
+            #[cfg(feature = "gpu-rendering")]
+            vello_viewer: VelloViewer::new(),
+            #[cfg(feature = "gpu-rendering")]
+            use_gpu_rendering: true, // Default to GPU rendering when available
         }
     }
 
@@ -265,6 +290,45 @@ impl ViewerPane {
         self.pan_zoom.reset();
     }
 
+    /// Compute a hash of the geometry for cache invalidation.
+    #[cfg(feature = "gpu-rendering")]
+    fn hash_geometry(geometry: &[Path]) -> u64 {
+        use std::collections::hash_map::DefaultHasher;
+        let mut hasher = DefaultHasher::new();
+        // Hash path count and basic properties
+        geometry.len().hash(&mut hasher);
+        for path in geometry {
+            path.contours.len().hash(&mut hasher);
+            for contour in &path.contours {
+                contour.points.len().hash(&mut hasher);
+                contour.closed.hash(&mut hasher);
+                // Hash actual point coordinates (critical for cache invalidation!)
+                for point in &contour.points {
+                    point.point.x.to_bits().hash(&mut hasher);
+                    point.point.y.to_bits().hash(&mut hasher);
+                    std::mem::discriminant(&point.point_type).hash(&mut hasher);
+                }
+            }
+            // Hash fill color
+            if let Some(fill) = path.fill {
+                fill.r.to_bits().hash(&mut hasher);
+                fill.g.to_bits().hash(&mut hasher);
+                fill.b.to_bits().hash(&mut hasher);
+                fill.a.to_bits().hash(&mut hasher);
+            }
+            // Hash stroke color
+            if let Some(stroke) = path.stroke {
+                stroke.r.to_bits().hash(&mut hasher);
+                stroke.g.to_bits().hash(&mut hasher);
+                stroke.b.to_bits().hash(&mut hasher);
+                stroke.a.to_bits().hash(&mut hasher);
+            }
+            // Hash stroke width
+            path.stroke_width.to_bits().hash(&mut hasher);
+        }
+        hasher.finish()
+    }
+
     /// Get a mutable reference to the handles.
     #[allow(dead_code)]
     pub fn handles_mut(&mut self) -> &mut Option<HandleSet> {
@@ -279,7 +343,10 @@ impl ViewerPane {
 
     /// Show the viewer pane with header tabs and toolbar.
     /// Returns any handle interaction result.
-    pub fn show(&mut self, ui: &mut egui::Ui, state: &AppState) -> HandleResult {
+    ///
+    /// Pass `render_state` for GPU-accelerated rendering when available.
+    /// When `gpu-rendering` feature is disabled, pass `None`.
+    pub fn show(&mut self, ui: &mut egui::Ui, state: &AppState, render_state: Option<&RenderState>) -> HandleResult {
         // Remove spacing so content is snug against header
         ui.spacing_mut().item_spacing = egui::vec2(0.0, 0.0);
 
@@ -370,7 +437,7 @@ impl ViewerPane {
 
         // Content area (directly after header, no extra spacing)
         match self.current_tab {
-            ViewerTab::Viewer => self.show_canvas(ui, state),
+            ViewerTab::Viewer => self.show_canvas(ui, state, render_state),
             ViewerTab::Data => {
                 self.show_data_view(ui, state);
                 HandleResult::None
@@ -379,7 +446,9 @@ impl ViewerPane {
     }
 
     /// Show the canvas viewer.
-    fn show_canvas(&mut self, ui: &mut egui::Ui, state: &AppState) -> HandleResult {
+    /// Uses GPU rendering when available (gpu-rendering feature + valid render_state + use_gpu_rendering enabled).
+    /// Falls back to CPU rendering otherwise.
+    fn show_canvas(&mut self, ui: &mut egui::Ui, state: &AppState, render_state: Option<&RenderState>) -> HandleResult {
         use crate::handles::{screen_to_world, FourPointDragState};
 
         // Initialize digit cache if needed
@@ -437,15 +506,8 @@ impl ViewerPane {
             self.draw_canvas_border(&painter, center, state.library.width(), state.library.height());
         }
 
-        // Draw all geometry
-        for path in &state.geometry {
-            self.draw_path(&painter, path, center);
-
-            // Draw points if enabled
-            if self.show_points {
-                self.draw_points(&painter, path, center);
-            }
-        }
+        // Draw all geometry (using GPU or CPU rendering)
+        self.render_geometry(ui, &painter, state, render_state, rect, center);
 
         // Draw origin crosshair
         if self.show_origin {
@@ -576,6 +638,77 @@ impl ViewerPane {
         HandleResult::None
     }
 
+    /// Render geometry using GPU when available, falling back to CPU.
+    #[cfg(feature = "gpu-rendering")]
+    fn render_geometry(
+        &mut self,
+        ui: &mut egui::Ui,
+        painter: &egui::Painter,
+        state: &AppState,
+        render_state: Option<&RenderState>,
+        rect: Rect,
+        center: Vec2,
+    ) {
+        let use_gpu = render_state.is_some()
+            && self.use_gpu_rendering
+            && self.vello_viewer.is_available();
+
+        if use_gpu {
+            let render_state = render_state.unwrap();
+
+            // Compute geometry hash for cache invalidation
+            let geometry_hash = Self::hash_geometry(&state.geometry);
+
+            // Set background color (Vello will render the background)
+            self.vello_viewer.set_background_color(state.background_color);
+
+            // Render with Vello using shared wgpu device
+            self.vello_viewer.render(
+                render_state,
+                ui,
+                &state.geometry,
+                self.pan_zoom.pan,
+                self.pan_zoom.zoom,
+                rect,
+                geometry_hash,
+            );
+
+            // Draw points overlay if enabled (still use egui for this)
+            if self.show_points {
+                for path in &state.geometry {
+                    self.draw_points(painter, path, center);
+                }
+            }
+        } else {
+            self.render_geometry_cpu(painter, state, center);
+        }
+    }
+
+    /// Render geometry using CPU (when gpu-rendering feature is disabled).
+    #[cfg(not(feature = "gpu-rendering"))]
+    fn render_geometry(
+        &mut self,
+        _ui: &mut egui::Ui,
+        painter: &egui::Painter,
+        state: &AppState,
+        _render_state: Option<&RenderState>,
+        _rect: Rect,
+        center: Vec2,
+    ) {
+        self.render_geometry_cpu(painter, state, center);
+    }
+
+    /// CPU-based geometry rendering (used as fallback or when GPU is unavailable).
+    fn render_geometry_cpu(&self, painter: &egui::Painter, state: &AppState, center: Vec2) {
+        for path in &state.geometry {
+            self.draw_path(painter, path, center);
+
+            if self.show_points {
+                self.draw_points(painter, path, center);
+            }
+        }
+    }
+
     /// Show the data view (placeholder for now).
     fn show_data_view(&mut self, ui: &mut egui::Ui, state: &AppState) {
         ui.vertical_centered(|ui| {
@@ -631,7 +764,7 @@ impl ViewerPane {
 
         // Draw border with constant 1px line width (screen space)
         let border_color = Color32::from_rgba_unmultiplied(128, 128, 128, 180);
-        painter.rect_stroke(canvas_rect, 0.0, Stroke::new(1.0, border_color));
+        painter.rect_stroke(canvas_rect, 0.0, Stroke::new(1.0, border_color), egui::StrokeKind::Inside);
     }
 
     /// Draw a background grid.
