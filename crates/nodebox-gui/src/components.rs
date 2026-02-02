@@ -237,3 +237,103 @@ pub fn header_separator(ui: &mut egui::Ui, header_rect: Rect, x: f32) -> f32 {
     );
     x + theme::PADDING
 }
+
+/// Draw a segmented control with two options in a header.
+///
+/// Returns (clicked_index, new_x) where clicked_index is Some(0) or Some(1) if clicked,
+/// or None if nothing was clicked.
+pub fn header_segmented_control(
+    ui: &mut egui::Ui,
+    header_rect: Rect,
+    x: f32,
+    labels: [&str; 2],
+    selected: usize,
+) -> (Option<usize>, f32) {
+    let font = egui::FontId::proportional(11.0);
+    let padding_h = 6.0; // Horizontal padding inside each segment
+    let y_center = header_rect.center().y;
+
+    // Calculate widths for each segment
+    let galley0 = ui.painter().layout_no_wrap(
+        labels[0].to_string(),
+        font.clone(),
+        theme::TEXT_STRONG,
+    );
+    let galley1 = ui.painter().layout_no_wrap(
+        labels[1].to_string(),
+        font.clone(),
+        theme::TEXT_STRONG,
+    );
+
+    let width0 = galley0.size().x + padding_h * 2.0;
+    let width1 = galley1.size().x + padding_h * 2.0;
+    let total_width = width0 + width1;
+
+    // Content area respecting 1px borders
+    let content_top = header_rect.top() + 1.0;
+    let content_bottom = header_rect.bottom() - 1.0;
+    let content_height = content_bottom - content_top;
+
+    // Only draw the selected segment (unselected is transparent/header bg)
+    let selected_x = if selected == 0 { x } else { x + width0 };
+    let selected_width = if selected == 0 { width0 } else { width1 };
+    let selected_rect = Rect::from_min_size(
+        egui::pos2(selected_x, content_top),
+        egui::vec2(selected_width, content_height),
+    );
+    ui.painter().rect_filled(
+        selected_rect,
+        0.0,
+        theme::SLATE_700,
+    );
+
+    // Create interaction rects and draw labels
+    let rect0 = Rect::from_min_size(
+        egui::pos2(x, header_rect.top()),
+        egui::vec2(width0, header_rect.height()),
+    );
+    let rect1 = Rect::from_min_size(
+        egui::pos2(x + width0, header_rect.top()),
+        egui::vec2(width1, header_rect.height()),
+    );
+
+    let response0 = ui.interact(
+        rect0,
+        ui.id().with(format!("seg_{}", labels[0])),
+        egui::Sense::click(),
+    );
+    let response1 = ui.interact(
+        rect1,
+        ui.id().with(format!("seg_{}", labels[1])),
+        egui::Sense::click(),
+    );
+
+    // Draw text labels
+    let color0 = if selected == 0 { theme::TEXT_STRONG } else { theme::TEXT_SUBDUED };
+    let color1 = if selected == 1 { theme::TEXT_STRONG } else { theme::TEXT_SUBDUED };
+
+    ui.painter().text(
+        egui::pos2(x + width0 / 2.0, y_center),
+        egui::Align2::CENTER_CENTER,
+        labels[0],
+        font.clone(),
+        color0,
+    );
+    ui.painter().text(
+        egui::pos2(x + width0 + width1 / 2.0, y_center),
+        egui::Align2::CENTER_CENTER,
+        labels[1],
+        font,
+        color1,
+    );
+
+    let clicked = if response0.clicked() {
+        Some(0)
+    } else if response1.clicked() {
+        Some(1)
+    } else {
+        None
+    };
+
+    (clicked, x + total_width)
+}

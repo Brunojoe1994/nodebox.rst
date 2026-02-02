@@ -353,18 +353,19 @@ impl ViewerPane {
         // Draw header with "VIEWER" title and separator
         let (header_rect, mut x) = components::draw_pane_header_with_title(ui, "Viewer");
 
-        // Tab buttons after the separator
-        let (clicked, new_x) = components::header_tab_button(
+        // Segmented control for Visual/Data toggle
+        let selected_index = if self.current_tab == ViewerTab::Viewer { 0 } else { 1 };
+        let (clicked_index, new_x) = components::header_segmented_control(
             ui,
             header_rect,
             x,
-            "Data",
-            self.current_tab == ViewerTab::Data,
+            ["Visual", "Data"],
+            selected_index,
         );
-        if clicked {
-            self.current_tab = ViewerTab::Data;
+        if let Some(index) = clicked_index {
+            self.current_tab = if index == 0 { ViewerTab::Viewer } else { ViewerTab::Data };
         }
-        x = new_x;
+        x = new_x + theme::PADDING_XL; // 16px spacing after segmented control
 
         let (clicked, new_x) = components::header_tab_button(
             ui,
