@@ -2,7 +2,7 @@
 
 use std::path::{Path, PathBuf};
 use nodebox_core::geometry::{Path as GeoPath, Color};
-use nodebox_core::node::{Node, NodeLibrary, Port, PortRange, Connection};
+use nodebox_core::node::{Node, NodeLibrary, Port, PortRange};
 use crate::eval;
 
 /// The main application state.
@@ -61,74 +61,23 @@ impl AppState {
         self.geometry = eval::evaluate_network(&self.library);
     }
 
-    /// Create a demo node library with some example nodes.
+    /// Create a demo node library with a single rect node.
     fn create_demo_library() -> NodeLibrary {
         let mut library = NodeLibrary::new("demo");
-
-        // Create demo nodes (positions in grid units, vertical flow: top to bottom)
-        // Layout:
-        //   ellipse1 (2,2)     rect1 (6,2)
-        //      ↓                  ↓
-        //   colorize1 (2,3)   colorize2 (6,3)
-        //         ↓              ↓
-        //           merge1 (4,4)
-        let ellipse_node = Node::new("ellipse1")
-            .with_prototype("corevector.ellipse")
-            .with_function("corevector/ellipse")
-            .with_category("geometry")
-            .with_position(2.0, 2.0)
-            .with_input(Port::point("position", nodebox_core::geometry::Point::new(-100.0, -50.0)))
-            .with_input(Port::float("width", 100.0))
-            .with_input(Port::float("height", 100.0));
-
-        let colorize_node = Node::new("colorize1")
-            .with_prototype("corevector.colorize")
-            .with_function("corevector/colorize")
-            .with_category("color")
-            .with_position(2.0, 3.0)
-            .with_input(Port::geometry("shape"))
-            .with_input(Port::color("fill", Color::rgb(0.9, 0.2, 0.2)))
-            .with_input(Port::color("stroke", Color::BLACK))
-            .with_input(Port::float("strokeWidth", 1.0));
 
         let rect_node = Node::new("rect1")
             .with_prototype("corevector.rect")
             .with_function("corevector/rect")
             .with_category("geometry")
-            .with_position(6.0, 2.0)
-            .with_input(Port::point("position", nodebox_core::geometry::Point::new(100.0, 50.0)))
-            .with_input(Port::float("width", 80.0))
-            .with_input(Port::float("height", 80.0));
+            .with_position(1.0, 1.0)
+            .with_input(Port::point("position", nodebox_core::geometry::Point::ZERO))
+            .with_input(Port::float("width", 100.0))
+            .with_input(Port::float("height", 100.0))
+            .with_input(Port::point("roundness", nodebox_core::geometry::Point::ZERO));
 
-        let colorize2_node = Node::new("colorize2")
-            .with_prototype("corevector.colorize")
-            .with_function("corevector/colorize")
-            .with_category("color")
-            .with_position(6.0, 3.0)
-            .with_input(Port::geometry("shape"))
-            .with_input(Port::color("fill", Color::rgb(0.2, 0.8, 0.3)))
-            .with_input(Port::color("stroke", Color::BLACK))
-            .with_input(Port::float("strokeWidth", 1.0));
-
-        let merge_node = Node::new("merge1")
-            .with_prototype("corevector.merge")
-            .with_function("corevector/merge")
-            .with_category("geometry")
-            .with_position(4.0, 4.0)
-            .with_input(Port::geometry("shapes"));
-
-        // Build the root network
         library.root = Node::network("root")
-            .with_child(ellipse_node)
-            .with_child(colorize_node)
             .with_child(rect_node)
-            .with_child(colorize2_node)
-            .with_child(merge_node)
-            .with_connection(Connection::new("ellipse1", "colorize1", "shape"))
-            .with_connection(Connection::new("rect1", "colorize2", "shape"))
-            .with_connection(Connection::new("colorize1", "merge1", "shapes"))
-            .with_connection(Connection::new("colorize2", "merge1", "shapes"))
-            .with_rendered_child("merge1");
+            .with_rendered_child("rect1");
 
         library
     }

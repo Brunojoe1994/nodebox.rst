@@ -195,8 +195,14 @@ impl NodeLibraryBrowser {
                 // Display node button
                 ui.horizontal(|ui| {
                     if ui.button("+").clicked() {
+                        // Calculate position (offset from last node or default)
+                        let pos = if let Some(last_child) = library.root.children.last() {
+                            Point::new(last_child.position.x + 180.0, last_child.position.y)
+                        } else {
+                            Point::new(50.0, 50.0)
+                        };
                         // Create the node
-                        let node = create_node_from_template(template, library);
+                        let node = create_node_from_template(template, library, pos);
                         let node_name = node.name.clone();
                         library.root.children.push(node);
                         created_node = Some(node_name);
@@ -212,70 +218,61 @@ impl NodeLibraryBrowser {
 }
 
 /// Create a new node from a template.
-fn create_node_from_template(template: &NodeTemplate, library: &NodeLibrary) -> Node {
+pub fn create_node_from_template(template: &NodeTemplate, library: &NodeLibrary, position: Point) -> Node {
     // Generate unique name
     let base_name = template.name;
     let name = library.root.unique_child_name(base_name);
-
-    // Calculate position (offset from last node or default)
-    let pos = if let Some(last_child) = library.root.children.last() {
-        Point::new(last_child.position.x + 180.0, last_child.position.y)
-    } else {
-        Point::new(50.0, 50.0)
-    };
 
     // Create node with appropriate ports based on prototype
     let mut node = Node::new(&name)
         .with_prototype(template.prototype)
         .with_function(format!("corevector/{}", template.name))
         .with_category(template.category)
-        .with_position(pos.x, pos.y);
+        .with_position(position.x, position.y);
 
     // Add ports based on node type
     match template.name {
         "ellipse" => {
             node = node
-                .with_input(Port::float("x", 0.0))
-                .with_input(Port::float("y", 0.0))
+                .with_input(Port::point("position", Point::ZERO))
                 .with_input(Port::float("width", 100.0))
                 .with_input(Port::float("height", 100.0));
         }
         "rect" => {
             node = node
-                .with_input(Port::float("x", 0.0))
-                .with_input(Port::float("y", 0.0))
+                .with_input(Port::point("position", Point::ZERO))
                 .with_input(Port::float("width", 100.0))
                 .with_input(Port::float("height", 100.0))
-                .with_input(Port::float("roundness", 0.0));
+                .with_input(Port::point("roundness", Point::ZERO));
         }
         "line" => {
             node = node
-                .with_input(Port::point("point1", Point::new(0.0, 0.0)))
-                .with_input(Port::point("point2", Point::new(100.0, 100.0)));
+                .with_input(Port::point("point1", Point::ZERO))
+                .with_input(Port::point("point2", Point::new(100.0, 100.0)))
+                .with_input(Port::int("points", 2));
         }
         "polygon" => {
             node = node
-                .with_input(Port::float("x", 0.0))
-                .with_input(Port::float("y", 0.0))
-                .with_input(Port::float("radius", 50.0))
-                .with_input(Port::int("sides", 6));
+                .with_input(Port::point("position", Point::ZERO))
+                .with_input(Port::float("radius", 100.0))
+                .with_input(Port::int("sides", 3))
+                .with_input(Port::boolean("align", false));
         }
         "star" => {
             node = node
-                .with_input(Port::float("x", 0.0))
-                .with_input(Port::float("y", 0.0))
-                .with_input(Port::int("points", 5))
-                .with_input(Port::float("outerRadius", 50.0))
-                .with_input(Port::float("innerRadius", 25.0));
+                .with_input(Port::point("position", Point::ZERO))
+                .with_input(Port::int("points", 20))
+                .with_input(Port::float("outer", 200.0))
+                .with_input(Port::float("inner", 100.0));
         }
         "arc" => {
             node = node
-                .with_input(Port::float("x", 0.0))
-                .with_input(Port::float("y", 0.0))
+                .with_input(Port::point("position", Point::ZERO))
                 .with_input(Port::float("width", 100.0))
                 .with_input(Port::float("height", 100.0))
-                .with_input(Port::float("startAngle", 0.0))
-                .with_input(Port::float("degrees", 360.0));
+                .with_input(Port::float("start_angle", 0.0))
+                .with_input(Port::float("degrees", 45.0))
+                .with_input(Port::string("type", "pie"));
         }
         "grid" => {
             node = node
@@ -290,8 +287,7 @@ fn create_node_from_template(template: &NodeTemplate, library: &NodeLibrary) -> 
         "translate" => {
             node = node
                 .with_input(Port::geometry("shape"))
-                .with_input(Port::float("tx", 0.0))
-                .with_input(Port::float("ty", 0.0));
+                .with_input(Port::point("translate", Point::ZERO));
         }
         "rotate" => {
             node = node
@@ -302,17 +298,17 @@ fn create_node_from_template(template: &NodeTemplate, library: &NodeLibrary) -> 
         "scale" => {
             node = node
                 .with_input(Port::geometry("shape"))
-                .with_input(Port::float("sx", 100.0))
-                .with_input(Port::float("sy", 100.0));
+                .with_input(Port::point("scale", Point::new(100.0, 100.0)))
+                .with_input(Port::point("origin", Point::ZERO));
         }
         "copy" => {
             node = node
                 .with_input(Port::geometry("shape"))
-                .with_input(Port::int("copies", 10))
-                .with_input(Port::float("tx", 0.0))
-                .with_input(Port::float("ty", 0.0))
+                .with_input(Port::int("copies", 1))
+                .with_input(Port::string("order", "tsr"))
+                .with_input(Port::point("translate", Point::ZERO))
                 .with_input(Port::float("rotate", 0.0))
-                .with_input(Port::float("scale", 100.0));
+                .with_input(Port::point("scale", Point::new(100.0, 100.0)));
         }
         "colorize" => {
             node = node
@@ -327,12 +323,16 @@ fn create_node_from_template(template: &NodeTemplate, library: &NodeLibrary) -> 
         "resample" => {
             node = node
                 .with_input(Port::geometry("shape"))
-                .with_input(Port::int("points", 50));
+                .with_input(Port::string("method", "length"))
+                .with_input(Port::float("length", 10.0))
+                .with_input(Port::int("points", 10))
+                .with_input(Port::boolean("per_contour", false));
         }
         "wiggle" => {
             node = node
                 .with_input(Port::geometry("shape"))
-                .with_input(Port::float("offset", 10.0))
+                .with_input(Port::string("scope", "points"))
+                .with_input(Port::point("offset", Point::new(10.0, 10.0)))
                 .with_input(Port::int("seed", 0));
         }
         _ => {}
