@@ -2,7 +2,7 @@
 # Sign macOS application bundle for NodeBox
 #
 # Required environment variables (can be set in .env file):
-#   DEVELOPER_ID_APPLICATION - Developer ID Application certificate name
+#   APPLE_DEVELOPER_CERTIFICATE_NAME - Developer ID Application certificate name
 #                              e.g., "Developer ID Application: Your Name (TEAMID)"
 #
 # Optional environment variables:
@@ -23,11 +23,11 @@ if [ -f "$PROJECT_ROOT/.env" ]; then
 fi
 
 # Check required environment variables
-if [ -z "$DEVELOPER_ID_APPLICATION" ]; then
-    echo "Error: DEVELOPER_ID_APPLICATION environment variable not set"
+if [ -z "$APPLE_DEVELOPER_CERTIFICATE_NAME" ]; then
+    echo "Error: APPLE_DEVELOPER_CERTIFICATE_NAME environment variable not set"
     echo ""
     echo "Set it in .env file or export it:"
-    echo "  export DEVELOPER_ID_APPLICATION=\"Developer ID Application: Your Name (TEAMID)\""
+    echo "  export APPLE_DEVELOPER_CERTIFICATE_NAME=\"Developer ID Application: Your Name (TEAMID)\""
     echo ""
     echo "To find your certificate name, run:"
     echo "  security find-identity -v -p codesigning"
@@ -49,13 +49,13 @@ if [ ! -d "$BUNDLE_DIR" ]; then
     exit 1
 fi
 
-echo "Signing NodeBox.app with: $DEVELOPER_ID_APPLICATION"
+echo "Signing NodeBox.app with: $APPLE_DEVELOPER_CERTIFICATE_NAME"
 
 # Sign all frameworks and dylibs first (if any)
 find "$BUNDLE_DIR" -type f \( -name "*.dylib" -o -name "*.framework" \) -print0 2>/dev/null | while IFS= read -r -d '' file; do
     echo "Signing: $file"
     codesign --force --options runtime --timestamp \
-        --sign "$DEVELOPER_ID_APPLICATION" \
+        --sign "$APPLE_DEVELOPER_CERTIFICATE_NAME" \
         --entitlements "$ENTITLEMENTS" \
         "$file"
 done
@@ -63,14 +63,14 @@ done
 # Sign the main executable
 echo "Signing main executable..."
 codesign --force --options runtime --timestamp \
-    --sign "$DEVELOPER_ID_APPLICATION" \
+    --sign "$APPLE_DEVELOPER_CERTIFICATE_NAME" \
     --entitlements "$ENTITLEMENTS" \
     "$BUNDLE_DIR/Contents/MacOS/NodeBox"
 
 # Sign the entire bundle
 echo "Signing bundle..."
 codesign --force --options runtime --timestamp \
-    --sign "$DEVELOPER_ID_APPLICATION" \
+    --sign "$APPLE_DEVELOPER_CERTIFICATE_NAME" \
     --entitlements "$ENTITLEMENTS" \
     "$BUNDLE_DIR"
 

@@ -21,10 +21,10 @@ echo "Building NodeBox $VERSION ($BUILD_TYPE)..."
 
 # Build the binary
 cd "$PROJECT_ROOT"
-cargo build $CARGO_FLAGS -p nodebox-gui
+cargo build $CARGO_FLAGS
 
 # Set up paths
-BINARY_PATH="$PROJECT_ROOT/target/$BUILD_TYPE/nodebox-gui"
+BINARY_PATH="$PROJECT_ROOT/target/$BUILD_TYPE/NodeBox"
 BUNDLE_DIR="$PROJECT_ROOT/target/$BUILD_TYPE/NodeBox.app"
 CONTENTS_DIR="$BUNDLE_DIR/Contents"
 MACOS_DIR="$CONTENTS_DIR/MacOS"
