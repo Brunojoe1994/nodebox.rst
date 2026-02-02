@@ -21,5 +21,5 @@ Thumbs.db
 lib/cachedir
 *$py.class
 
-# Claude Code
-.claude/worktrees
+# Secrets
+.env
