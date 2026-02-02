@@ -1,0 +1,71 @@
+[package]
+name = "nodebox"
+version.workspace = true
+edition.workspace = true
+
+default-run = "NodeBox"
+
+[[bin]]
+name = "NodeBox"
+path = "src/main.rs"
+
+[dependencies]
+nodebox-gui = { path = "crates/nodebox-gui" }
+eframe = "0.33"
+
+[workspace]
+resolver = "2"
+members = [
+    "crates/nodebox-core",
+    "crates/nodebox-ndbx",
+    "crates/nodebox-ops",
+    "crates/nodebox-svg",
+    "crates/nodebox-cli",
+    "crates/nodebox-gui",
+    "crates/nodebox-python",
+]
+
+# Default members exclude nodebox-python since it requires Python development libraries.
+# To build nodebox-python, install Python dev headers and run:
+#   cargo build -p nodebox-python
+default-members = [
+    ".",
+    "crates/nodebox-core",
+    "crates/nodebox-ndbx",
+    "crates/nodebox-ops",
+    "crates/nodebox-svg",
+    "crates/nodebox-cli",
+    "crates/nodebox-gui",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0"
+repository = "https://github.com/nodebox/nodebox"
+authors = ["NodeBox Contributors"]
+
+[workspace.dependencies]
+# Core geometry
+kurbo = "0.11"
+
+# Font loading and text paths
+font-kit = "0.14"
+pathfinder_geometry = "0.5"
+
+# UUID generation (add "js" feature for wasm32 builds)
+uuid = { version = "1.6", features = ["v4"] }
+
+# XML parsing
+quick-xml = "0.31"
+
+# Error handling
+thiserror = "1.0"
+
+# Testing
+proptest = "1.4"
+approx = "0.5"
+
+# GPU rendering (optional)
+vello = "0.7"
+pollster = "0.4"
